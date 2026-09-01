@@ -18,17 +18,34 @@ import {LevelSelectScreen} from './src/screens/LevelSelectScreen';
 import {
   ProgressMap,
   initialProgress,
+  loadMuted,
   loadProgress,
   recordResult,
+  saveMuted,
 } from './src/storage/progress';
+import {sounds} from './src/audio/sounds';
 import {palette} from './src/theme';
 
 function App() {
   const [progress, setProgress] = useState<ProgressMap>(initialProgress);
   const [level, setLevel] = useState<LevelDefinition | null>(null);
+  const [muted, setMuted] = useState(false);
 
   useEffect(() => {
     loadProgress().then(setProgress);
+    loadMuted().then(stored => {
+      setMuted(stored);
+      sounds.setEnabled(!stored);
+    });
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    setMuted(current => {
+      const next = !current;
+      sounds.setEnabled(!next);
+      saveMuted(next);
+      return next;
+    });
   }, []);
 
   // Read through a ref so a result landing while a previous write is still in
@@ -55,6 +72,8 @@ function App() {
               onExit={() => setLevel(null)}
               onNext={following ? () => setLevel(following) : null}
               onResult={handleResult}
+              muted={muted}
+              onToggleMute={toggleMute}
             />
           ) : (
             <LevelSelectScreen progress={progress} onSelect={setLevel} />

@@ -119,6 +119,67 @@ export function failureLine(run: RecordedRun): string | null {
   }
 }
 
+/** Ticks of stillness that make a failure a stall rather than a journey. */
+const STALL_WINDOW = 3;
+
+/**
+ * Where people failed without moving — jammed against a shut door, or locked
+ * against someone coming the other way. A movement trail cannot show this: it
+ * would be one cell drawn over itself, which reads as nothing.
+ */
+export function stalledFailures(run: RecordedRun): Vec2[] {
+  const lost = new Set(run.result.failedAgentIds);
+  if (lost.size === 0) {
+    return [];
+  }
+
+  const window = run.frames.slice(-(STALL_WINDOW + 1));
+  if (window.length <= STALL_WINDOW) {
+    return [];
+  }
+
+  const cells: Vec2[] = [];
+  for (const id of lost) {
+    const positions = window
+      .map(f => f.agents.find(a => a.id === id)?.cell ?? null)
+      .filter((c): c is Vec2 => c !== null);
+    if (positions.length <= STALL_WINDOW) {
+      continue;
+    }
+    const first = positions[0];
+    const still = positions.every(c => c.x === first.x && c.y === first.y);
+    if (still) {
+      cells.push(first);
+    }
+  }
+  return cells;
+}
+
+/**
+ * The first cells of the corridor a placed signal points down. Deliberately
+ * short: previewing the whole route would answer the question the level is
+ * asking.
+ */
+export function signalPreviewCells(
+  level: LevelDefinition,
+  signal: SignalPlacement | null,
+  count = 3,
+): Vec2[] {
+  if (!signal) {
+    return [];
+  }
+  const edge = level.graph.edges.find(e => e.id === signal.edgeId);
+  return edge ? edge.cells.slice(0, count) : [];
+}
+
+/** The cell of the junction this level blames for the failure. */
+export function criticalCell(level: LevelDefinition): Vec2 | null {
+  const node = level.graph.nodes.find(
+    n => n.id === level.criticalDecision.junctionId,
+  );
+  return node?.cell ?? null;
+}
+
 /** Why the person the analysis blames chose what they chose. */
 export function criticalDecision(
   level: LevelDefinition,

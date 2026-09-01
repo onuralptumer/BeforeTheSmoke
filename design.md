@@ -245,12 +245,14 @@ The signal never bounces or behaves like a toy. Its motion is engineered, reliab
 
 Four effects, and nothing else. The mechanical spec requires that no critical information is lost when audio is off, which makes the whole soundscape optional by construction; a five-layer ambient bed of HVAC, reverb, distant footsteps, creaks and public murmur is asset work that cannot change an outcome.
 
-| Event | Sound |
-|---|---|
-| Signal snaps into socket | Precise metallic click |
-| Signal rotates | Mechanical notch |
-| Door closes | Low mechanical impact |
-| Everyone exits | Restrained three-note resolution |
+| Event | Sound | Synthesis |
+|---|---|---|
+| Signal snaps into socket | Precise metallic click | 2.6 kHz square + 3.9 kHz triangle, 45 ms |
+| Signal rotates | Mechanical notch | 1.15 kHz square, 28 ms |
+| Door closes | Low mechanical impact | 150 → 62 Hz triangle glide, 240 ms, over a short transient |
+| Everyone exits | Restrained three-note resolution | C5–E5–G5 sines, staggered 130 ms |
+
+All four are generated from oscillators rather than loaded from files. Four short mechanical cues do not justify shipping, licensing and maintaining audio assets, and synthesis keeps them tunable in the same place they are described. A mute control sits in the top bar and its setting persists.
 
 Silence is part of the design. At the first irreversible failure, narrowing the sound field is more powerful than an alarm. No music in the prototype.
 

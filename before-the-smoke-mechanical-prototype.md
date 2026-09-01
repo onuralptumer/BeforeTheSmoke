@@ -630,12 +630,15 @@ The project is on **React Native 0.87.1 / React 19.2.3**, new architecture only.
 | 2D rendering | `@shopify/react-native-skia` | Earns its place: canvas, smoke noise, trails |
 | Touch | `react-native-gesture-handler` | Required for the socket drag over a Skia canvas; unlisted in the original spec |
 | Haptics | a haptics module | RN ships no haptics API; the design specifies six patterns |
-| Persistence | MMKV, or a JSON file | See below |
+| Persistence | AsyncStorage | See below |
+| Sound | `react-native-audio-api` | Pinned exactly; see below |
 | Panel transitions | core `Animated` | **Not** Reanimated |
 
 **Not SQLite.** The persisted data is ten progress rows and a run log, and it is written after a run, never inside the loop. A JSI SQLite binding is the single most likely thing to break this build: it couples to native module versions, and `react-native-nitro-sqlite`'s "RN ≥ 0.75" guidance is stale against 0.87 new-architecture-only. If SQLite is ever genuinely needed, `op-sqlite` is the better-maintained line.
 
 **Not Reanimated.** It was proposed only for panels and transitions, which core `Animated` covers without a Babel plugin and worklets.
+
+**One caveat on sound.** The four effects are synthesised from oscillators rather than loaded from files, so no audio assets ship. `react-native-audio-api` declares Reanimated an *optional* peer, but its package barrel re-exports `AudioControls`, which imports Reanimated unconditionally — so importing the package normally cannot be bundled without the whole Reanimated and Worklets stack. `src/audio/sounds.ts` therefore imports `react-native-audio-api/src/core/AudioContext` directly, which reaches none of that. That is a coupling to an internal path, so the dependency is **pinned to an exact version** and `__tests__/audio.test.ts` fails if an upgrade moves the file — turning a possible red screen into a failing test. Every call is wrapped so that a device which cannot open an audio context simply plays in silence.
 
 Keep the record shapes below as the logical persistence format regardless of the store:
 
@@ -786,7 +789,7 @@ None of these are needed to test the central hypothesis. If people do not want t
 9. Analysis view: trails, event strip, before/after ✅
 10. Incident Archive and persistence ✅
 11. Haptics ✅
-12. Sound and visual polish
+12. Sound and visual polish ✅
 
 The harness comes before rendering deliberately. A level whose numbers are wrong is invisible on screen and obvious in a test.
 

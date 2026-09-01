@@ -1,5 +1,16 @@
 {
   "extends": "@react-native/typescript-config",
+  "compilerOptions": {
+    "paths": {
+      // sounds.ts imports an internal module path of react-native-audio-api
+      // (see the comment there). Without this, TypeScript follows it into the
+      // dependency's own untyped source and reports that package's errors as
+      // ours. src/audio/audio-api.d.ts declares the narrow surface we call.
+      "react-native-audio-api/src/core/AudioContext": [
+        "./src/audio/audio-api.d.ts"
+      ]
+    }
+  },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["**/node_modules", "**/Pods"]
 }

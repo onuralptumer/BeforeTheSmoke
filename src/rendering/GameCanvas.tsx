@@ -5,7 +5,7 @@
 
 import React, {useMemo} from 'react';
 import {StyleSheet} from 'react-native';
-import {Canvas} from '@shopify/react-native-skia';
+import {Canvas, Rect} from '@shopify/react-native-skia';
 
 import {
   LevelDefinition,
@@ -17,6 +17,7 @@ import {RecordedRun} from '../game/replay/record';
 import {Viewport, lerpCentre} from './geometry';
 import {FloorLayer} from './layers/FloorLayer';
 import {HazardLayer} from './layers/HazardLayer';
+import {OverlayLayer} from './layers/OverlayLayer';
 import {PeopleLayer, PersonView} from './layers/PeopleLayer';
 import {SignalLayer} from './layers/SignalLayer';
 import {Trail, TrailLayer} from './layers/TrailLayer';
@@ -37,6 +38,11 @@ interface Props {
   ghostRun?: RecordedRun | null;
   /** Show finished route trails — analysis and result only. */
   showTrails: boolean;
+  /** Drop the environment back slightly so the analysis reads over it. */
+  dim: boolean;
+  criticalCell: Vec2 | null;
+  stallCells: Vec2[];
+  previewCells: Vec2[];
   phase: number;
 }
 
@@ -53,6 +59,10 @@ export function GameCanvas({
   hoveredSocketId,
   ghostRun,
   showTrails,
+  dim,
+  criticalCell,
+  stallCells,
+  previewCells,
   phase,
 }: Props) {
   const frame = run.frames[Math.min(tickIndex, run.frames.length - 1)];
@@ -118,10 +128,29 @@ export function GameCanvas({
         smokeCells={frame.smokeCells}
         phase={phase}
       />
+      {/* The wash sits above the environment and below everything that
+          explains it, so trails and the signal stay at full strength. */}
+      {dim && (
+        <Rect
+          x={viewport.originX}
+          y={viewport.originY}
+          width={viewport.width}
+          height={viewport.height}
+          color={palette.background}
+          opacity={0.2}
+        />
+      )}
       {ghostTrails.length > 0 && (
         <TrailLayer viewport={viewport} trails={ghostTrails} ghost />
       )}
       {trails.length > 0 && <TrailLayer viewport={viewport} trails={trails} />}
+      <OverlayLayer
+        viewport={viewport}
+        criticalCell={criticalCell}
+        stallCells={stallCells}
+        previewCells={previewCells}
+        phase={phase}
+      />
       <SignalLayer
         level={level}
         viewport={viewport}

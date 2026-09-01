@@ -27,6 +27,15 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
+// No audio device under test. Throwing here also exercises the graceful
+// degradation path: the game must be complete in silence.
+jest.mock('react-native-audio-api/src/core/AudioContext', () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => {
+    throw new Error('no audio device in tests');
+  }),
+}));
+
 jest.mock('react-native-haptic-feedback', () => ({
   __esModule: true,
   default: {trigger: jest.fn()},

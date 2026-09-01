@@ -168,6 +168,24 @@ async function appendRun(record: RunRecord): Promise<void> {
   }
 }
 
+const MUTED_KEY = 'bts:muted:v1';
+
+export async function loadMuted(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(MUTED_KEY)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export async function saveMuted(muted: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(MUTED_KEY, muted ? '1' : '0');
+  } catch {
+    // A setting that fails to persist is not worth interrupting anything for.
+  }
+}
+
 /** Read back during a playtest to count attempts and failure reasons. */
 export async function loadRuns(): Promise<RunRecord[]> {
   try {

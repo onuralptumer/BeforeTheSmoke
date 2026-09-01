@@ -7,7 +7,7 @@
  * the signal changes, and this screen only moves a playhead across it.
  */
 
-import React, {useCallback, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   LayoutChangeEvent,
   Pressable,
@@ -23,16 +23,21 @@ import {LevelDefinition, SignalPlacement} from '../game/types';
 import {WorldMap} from '../game/engine/world';
 import {
   RecordedRun,
+  criticalCell,
   criticalDecision,
   failureLine,
   recordRun,
+  signalPreviewCells,
+  stalledFailures,
   timelineFor,
 } from '../game/replay/record';
 import {GameCanvas} from '../rendering/GameCanvas';
 import {Viewport, cellCentre, distance, fitViewport} from '../rendering/geometry';
 import {usePlayback} from '../state/usePlayback';
+import {usePulse} from '../state/usePulse';
 import {Button} from '../components/Button';
 import {haptics} from '../audio/haptics';
+import {sounds} from '../audio/sounds';
 import {numeric, palette} from '../theme';
 
 type Phase = 'INTRO' | 'OBSERVING' | 'ANALYZING' | 'REPLAYING' | 'RESULT';
@@ -45,9 +50,18 @@ interface Props {
   onExit: () => void;
   onNext: (() => void) | null;
   onResult: (run: RecordedRun) => void;
+  muted: boolean;
+  onToggleMute: () => void;
 }
 
-export function GameScreen({level, onExit, onNext, onResult}: Props) {
+export function GameScreen({
+  level,
+  onExit,
+  onNext,
+  onResult,
+  muted,
+  onToggleMute,
+}: Props) {
   const insets = useSafeAreaInsets();
   const map = useMemo(() => new WorldMap(level), [level]);
   const baseline = useMemo(() => recordRun(level, null), [level]);
@@ -78,6 +92,7 @@ export function GameScreen({level, onExit, onNext, onResult}: Props) {
   const onRunFinished = useCallback(() => {
     if (run.result.success) {
       haptics.everyoneOut();
+      sounds.everyoneOut();
       setPhase('RESULT');
     } else {
       haptics.failure();
@@ -89,9 +104,14 @@ export function GameScreen({level, onExit, onNext, onResult}: Props) {
   const playback = usePlayback(run, onRunFinished);
   const {play, restart} = playback;
 
-  // A slow shared phase for socket pulse and smoke drift, derived from the
-  // playhead so it costs no extra state.
-  const pulsePhase = (playback.tickIndex + playback.alpha) / 6.4;
+  // While a run plays, the playhead is already re-rendering, so derive the
+  // pulse from it for free. While the analysis sits still, the playhead does
+  // too, so fall back to an independent clock.
+  const idlePulse = usePulse(phase === 'ANALYZING');
+  const pulsePhase =
+    phase === 'ANALYZING'
+      ? idlePulse
+      : (playback.tickIndex + playback.alpha) / 6.4;
 
   const startBaseline = useCallback(() => {
     setPhase('OBSERVING');
@@ -169,6 +189,7 @@ export function GameScreen({level, onExit, onNext, onResult}: Props) {
                 : {socketId: hit, edgeId: socket.allowedEdgeIds[0]},
             );
             haptics.signalSnap();
+            sounds.signalSnap();
           }
         })
         .onFinalize(() => {
@@ -193,6 +214,7 @@ export function GameScreen({level, onExit, onNext, onResult}: Props) {
       socket.allowedEdgeIds[(index + 1) % socket.allowedEdgeIds.length];
     setSignal({socketId: signal.socketId, edgeId: nextEdge});
     haptics.rotate();
+    sounds.rotate();
   }, [signal, level.signalSockets]);
 
   const frame = run.frames[Math.min(playback.tickIndex, run.frames.length - 1)];
@@ -204,6 +226,49 @@ export function GameScreen({level, onExit, onNext, onResult}: Props) {
   }, []);
 
   const showTrails = phase === 'ANALYZING' || phase === 'RESULT';
+  const explaining = phase === 'ANALYZING';
+
+  const stallCells = useMemo(
+    () => (explaining ? stalledFailures(run) : []),
+    [explaining, run],
+  );
+  const previewCells = useMemo(
+    () => (canPlace ? signalPreviewCells(level, signal) : []),
+    [canPlace, level, signal],
+  );
+  const blamedCell = useMemo(
+    () => (explaining ? criticalCell(level) : null),
+    [explaining, level],
+  );
+
+  // One warning when somebody first reaches exposure 3 — a person-tick from
+  // incapacitation. Never per tick, and never per person.
+  const warnedRef = useRef(false);
+  const watching = phase === 'OBSERVING' || phase === 'REPLAYING';
+  useEffect(() => {
+    if (!watching) {
+      warnedRef.current = false;
+      return;
+    }
+    if (warnedRef.current) {
+      return;
+    }
+    if (frame.agents.some(a => a.exposure >= 3 && a.state === 'ACTIVE')) {
+      warnedRef.current = true;
+      haptics.hazardThreshold();
+    }
+  }, [watching, frame]);
+
+  // A door shutting is the one world event that gets a sound, because it is
+  // the one the player is most likely to be looking away from.
+  const doorsRef = useRef(frame.closedDoorCells.length);
+  useEffect(() => {
+    const count = frame.closedDoorCells.length;
+    if (watching && count > doorsRef.current) {
+      sounds.doorClose();
+    }
+    doorsRef.current = count;
+  }, [watching, frame]);
 
   return (
     <View style={[styles.root, {paddingTop: insets.top}]}>
@@ -213,6 +278,8 @@ export function GameScreen({level, onExit, onNext, onResult}: Props) {
         total={frame.agents.length}
         tick={frame.tick}
         onExit={onExit}
+        muted={muted}
+        onToggleMute={onToggleMute}
       />
 
       <GestureDetector gesture={pan}>
@@ -231,6 +298,10 @@ export function GameScreen({level, onExit, onNext, onResult}: Props) {
               hoveredSocketId={hoveredSocketId}
               ghostRun={showBefore ? baseline : null}
               showTrails={showTrails}
+              dim={explaining}
+              criticalCell={blamedCell}
+              stallCells={stallCells}
+              previewCells={previewCells}
               phase={pulsePhase}
             />
           )}
@@ -280,12 +351,16 @@ function TopBar({
   total,
   tick,
   onExit,
+  muted,
+  onToggleMute,
 }: {
   level: LevelDefinition;
   safeCount: number;
   total: number;
   tick: number;
   onExit: () => void;
+  muted: boolean;
+  onToggleMute: () => void;
 }) {
   return (
     <View style={styles.topBar}>
@@ -295,11 +370,21 @@ function TopBar({
       <Text numberOfLines={1} style={styles.title}>
         {level.title}
       </Text>
+      <Pressable
+        onPress={onToggleMute}
+        accessibilityRole="switch"
+        accessibilityLabel={muted ? 'Unmute sound' : 'Mute sound'}
+        accessibilityState={{checked: !muted}}
+        hitSlop={12}>
+        <Text style={styles.back}>{muted ? 'Sound off' : 'Sound on'}</Text>
+      </Pressable>
       <View style={styles.readouts}>
         <Text style={styles.readout}>
           {safeCount}/{total} safe
         </Text>
-        <Text style={[styles.readout, styles.mono]}>t{String(tick).padStart(2, '0')}</Text>
+        <Text style={[styles.readout, styles.mono]}>
+          t{String(tick).padStart(2, '0')}
+        </Text>
       </View>
     </View>
   );
