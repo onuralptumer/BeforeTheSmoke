@@ -77,7 +77,7 @@ const variantStyle: Record<Variant, ViewStyle> = {
 };
 
 const labelStyle: Record<Variant, TextStyle> = {
-  primary: {color: palette.background},
+  primary: {color: palette.shell},
   secondary: {color: palette.text},
   quiet: {color: palette.textMuted},
 };

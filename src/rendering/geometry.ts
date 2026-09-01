@@ -11,8 +11,16 @@ import {layout} from '../theme';
 
 export interface Viewport {
   cell: number;
+  /**
+   * Where cell (0,0) would sit. Cell coordinates map straight through this, so
+   * nothing downstream needs to know the view is cropped — but it can fall
+   * outside the visible area, so it is not the rectangle to paint.
+   */
   originX: number;
   originY: number;
+  /** The visible content rectangle. Paint backgrounds and washes with this. */
+  frameX: number;
+  frameY: number;
   width: number;
   height: number;
 }
@@ -29,10 +37,93 @@ export function fitViewport(
   );
   const width = cell * cols;
   const height = cell * rows;
+  const originX = Math.round((availableWidth - width) / 2);
+  const originY = Math.round((availableHeight - height) / 2);
+  return {cell, originX, originY, frameX: originX, frameY: originY, width, height};
+}
+
+export interface Bounds {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+/**
+ * The rectangle a level actually occupies.
+ *
+ * Levels are authored on a common 13 × 20 grid but most use a fraction of it,
+ * so fitting the whole grid leaves the plan small and adrift in empty ground.
+ * Framing the occupied area instead lets every incident fill the screen at the
+ * largest cell size it can.
+ */
+export function contentBounds(
+  isWall: (x: number, y: number) => boolean,
+  cols: number,
+  rows: number,
+  margin = 1,
+): Bounds {
+  let minX = cols;
+  let minY = rows;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (isWall(x, y)) {
+        continue;
+      }
+      if (x < minX) {
+        minX = x;
+      }
+      if (y < minY) {
+        minY = y;
+      }
+      if (x > maxX) {
+        maxX = x;
+      }
+      if (y > maxY) {
+        maxY = y;
+      }
+    }
+  }
+
+  if (maxX < 0) {
+    return {minX: 0, minY: 0, maxX: cols - 1, maxY: rows - 1};
+  }
+
+  return {
+    minX: Math.max(0, minX - margin),
+    minY: Math.max(0, minY - margin),
+    maxX: Math.min(cols - 1, maxX + margin),
+    maxY: Math.min(rows - 1, maxY + margin),
+  };
+}
+
+/** Fit and centre the occupied area of a level in the available space. */
+export function fitViewportToContent(
+  availableWidth: number,
+  availableHeight: number,
+  bounds: Bounds,
+): Viewport {
+  const cols = bounds.maxX - bounds.minX + 1;
+  const rows = bounds.maxY - bounds.minY + 1;
+  const cell = Math.max(
+    layout.minCell,
+    Math.floor(Math.min(availableWidth / cols, availableHeight / rows)),
+  );
+  const width = cell * cols;
+  const height = cell * rows;
+  const frameX = Math.round((availableWidth - width) / 2);
+  const frameY = Math.round((availableHeight - height) / 2);
   return {
     cell,
-    originX: Math.round((availableWidth - width) / 2),
-    originY: Math.round((availableHeight - height) / 2),
+    // Shift the origin back by the bounds, so cell coordinates still map
+    // straight through and nothing else in the renderer has to know.
+    originX: frameX - bounds.minX * cell,
+    originY: frameY - bounds.minY * cell,
+    frameX,
+    frameY,
     width,
     height,
   };
@@ -88,42 +179,3 @@ export const distance = (
   a: {x: number; y: number},
   b: {x: number; y: number},
 ) => Math.hypot(a.x - b.x, a.y - b.y);
-
-/**
- * Wall cells that actually enclose something walkable.
- *
- * Levels are sparse — Level 1 uses a few dozen cells of a 13 × 20 grid — so
- * painting every empty cell graphite turns the map into a black slab. Drawing
- * only the wall cells touching a corridor gives the architectural-plan reading
- * the design asks for.
- */
-export function boundingWalls(
-  isWall: (x: number, y: number) => boolean,
-  width: number,
-  height: number,
-): Vec2[] {
-  const inside = (x: number, y: number) =>
-    x >= 0 && y >= 0 && x < width && y < height;
-  const walkable = (x: number, y: number) => inside(x, y) && !isWall(x, y);
-
-  const result: Vec2[] = [];
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (!isWall(x, y)) {
-        continue;
-      }
-      let encloses = false;
-      for (let dy = -1; dy <= 1 && !encloses; dy++) {
-        for (let dx = -1; dx <= 1 && !encloses; dx++) {
-          if ((dx !== 0 || dy !== 0) && walkable(x + dx, y + dy)) {
-            encloses = true;
-          }
-        }
-      }
-      if (encloses) {
-        result.push({x, y});
-      }
-    }
-  }
-  return result;
-}

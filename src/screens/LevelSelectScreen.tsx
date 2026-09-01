@@ -3,7 +3,7 @@
  *
  * No padlocks. A future incident is a muted archive entry with its
  * prerequisite stated, which keeps the tone professional and preserves
- * curiosity about what the floor plan is hiding.
+ * curiosity about the floor plan it is hiding.
  */
 
 import React, {useMemo} from 'react';
@@ -14,16 +14,18 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {Canvas, Rect} from '@shopify/react-native-skia';
+import {Canvas, Group, Path, Rect, Skia} from '@shopify/react-native-skia';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {LevelDefinition} from '../game/types';
 import {WorldMap} from '../game/engine/world';
 import {LEVELS} from '../game/levels';
 import {LevelProgress, ProgressMap} from '../storage/progress';
+import {contentBounds} from '../rendering/geometry';
 import {palette} from '../theme';
 
-const THUMB_W = 78;
+const THUMB_W = 84;
+const THUMB_H = 108;
 
 interface Props {
   progress: ProgressMap;
@@ -78,7 +80,7 @@ function IncidentCard({
 
   return (
     <TouchableOpacity
-      activeOpacity={unlocked ? 0.7 : 1}
+      activeOpacity={unlocked ? 0.75 : 1}
       accessibilityRole="button"
       accessibilityState={{disabled: !unlocked}}
       onPress={unlocked ? () => onSelect(level) : undefined}
@@ -96,9 +98,9 @@ function IncidentCard({
         </Text>
         {unlocked && progress ? (
           <View style={styles.markRow}>
-            <MarkChip label="Rescue" earned={progress.marks.rescue} />
-            <MarkChip label="Flow" earned={progress.marks.flow} />
-            <MarkChip label="Swift" earned={progress.marks.swift} />
+            <MarkChip label="RESCUE" earned={progress.marks.rescue} />
+            <MarkChip label="FLOW" earned={progress.marks.flow} />
+            <MarkChip label="SWIFT" earned={progress.marks.swift} />
           </View>
         ) : null}
       </View>
@@ -111,7 +113,7 @@ function IncidentCard({
   );
 }
 
-/** A compact floor plan, drawn from the same derived grid the game uses. */
+/** A compact plan, drawn from the same derived grid the game renders. */
 const LevelThumb = React.memo(function LevelThumbImpl({
   level,
   dimmed,
@@ -120,27 +122,98 @@ const LevelThumb = React.memo(function LevelThumbImpl({
   dimmed: boolean;
 }) {
   const map = useMemo(() => new WorldMap(level), [level]);
-  const cell = THUMB_W / level.width;
-  const height = cell * level.height;
+
+  // Same framing as the game screen: show the plan, not the empty grid it was
+  // authored on.
+  const {floor, wall, exits, cell} = useMemo(() => {
+    const walkable = (x: number, y: number) =>
+      x >= 0 &&
+      y >= 0 &&
+      x < level.width &&
+      y < level.height &&
+      map.tiles[y][x] !== 'WALL';
+
+    const b = contentBounds(
+      (x, y) => map.tiles[y][x] === 'WALL',
+      level.width,
+      level.height,
+    );
+    const cols = b.maxX - b.minX + 1;
+    const rows = b.maxY - b.minY + 1;
+    const size = Math.min(THUMB_W / cols, THUMB_H / rows);
+    const offsetX = (THUMB_W - size * cols) / 2 - b.minX * size;
+    const offsetY = (THUMB_H - size * rows) / 2 - b.minY * size;
+
+    const px = (x: number) => offsetX + x * size;
+    const py = (y: number) => offsetY + y * size;
+
+    const floorPath = Skia.Path.Make();
+    const wallPath = Skia.Path.Make();
+
+    for (let y = 0; y < level.height; y++) {
+      for (let x = 0; x < level.width; x++) {
+        if (!walkable(x, y)) {
+          continue;
+        }
+        floorPath.addRect({
+          x: px(x) - 0.3,
+          y: py(y) - 0.3,
+          width: size + 0.6,
+          height: size + 0.6,
+        });
+        if (!walkable(x, y - 1)) {
+          wallPath.moveTo(px(x), py(y));
+          wallPath.lineTo(px(x) + size, py(y));
+        }
+        if (!walkable(x, y + 1)) {
+          wallPath.moveTo(px(x), py(y) + size);
+          wallPath.lineTo(px(x) + size, py(y) + size);
+        }
+        if (!walkable(x - 1, y)) {
+          wallPath.moveTo(px(x), py(y));
+          wallPath.lineTo(px(x), py(y) + size);
+        }
+        if (!walkable(x + 1, y)) {
+          wallPath.moveTo(px(x) + size, py(y));
+          wallPath.lineTo(px(x) + size, py(y) + size);
+        }
+      }
+    }
+
+    return {
+      floor: floorPath,
+      wall: wallPath,
+      exits: level.graph.nodes
+        .filter(n => n.kind === 'EXIT')
+        .map(n => ({id: n.id, x: px(n.cell.x), y: py(n.cell.y)})),
+      cell: size,
+    };
+  }, [level, map]);
 
   return (
-    <Canvas style={{width: THUMB_W, height}}>
-      <Rect x={0} y={0} width={THUMB_W} height={height} color={palette.wall} />
-      {map.tiles.flatMap((row, y) =>
-        row.map((tile, x) =>
-          tile === 'WALL' ? null : (
-            <Rect
-              key={`${x},${y}`}
-              x={x * cell}
-              y={y * cell}
-              width={cell}
-              height={cell}
-              color={tile === 'EXIT' ? palette.safe : palette.floor}
-              opacity={dimmed ? 0.35 : 1}
-            />
-          ),
-        ),
-      )}
+    <Canvas style={styles.thumb}>
+      <Rect x={0} y={0} width={THUMB_W} height={THUMB_H} color={palette.ground} />
+      <Group opacity={dimmed ? 0.4 : 1}>
+        <Path path={floor} color={palette.floor} />
+        <Path path={wall} color={palette.wall} style="stroke" strokeWidth={1.6} />
+        <Path
+          path={wall}
+          color={palette.wallInner}
+          style="stroke"
+          strokeWidth={0.6}
+          opacity={0.9}
+        />
+        {exits.map(exit => (
+          <Rect
+            key={exit.id}
+            x={exit.x}
+            y={exit.y}
+            width={cell}
+            height={cell}
+            color={palette.safe}
+          />
+        ))}
+      </Group>
     </Canvas>
   );
 });
@@ -156,46 +229,52 @@ function MarkChip({label, earned}: {label: string; earned: boolean}) {
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: palette.background},
-  header: {paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16, gap: 6},
+  root: {flex: 1, backgroundColor: palette.shell},
+  thumb: {width: THUMB_W, height: THUMB_H, borderRadius: 6},
+  header: {paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18, gap: 7},
   kicker: {
     color: palette.text,
     fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 2,
+    fontWeight: '800',
+    letterSpacing: 2.4,
   },
   blurb: {color: palette.textMuted, fontSize: 14, lineHeight: 20},
-  list: {paddingHorizontal: 16, gap: 12},
+  list: {paddingHorizontal: 14, gap: 12},
   card: {
     flexDirection: 'row',
     gap: 14,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#DDDAD2',
-    backgroundColor: '#FBFAF7',
+    borderColor: palette.panelEdge,
+    backgroundColor: palette.panel,
   },
-  cardLocked: {opacity: 0.55},
+  cardLocked: {opacity: 0.5},
   cardBody: {flex: 1, gap: 3},
   cardIndex: {
     color: palette.textMuted,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.2,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.6,
   },
-  cardTitle: {color: palette.text, fontSize: 17, fontWeight: '600'},
+  cardTitle: {color: palette.text, fontSize: 17, fontWeight: '700'},
   cardTeaches: {color: palette.textMuted, fontSize: 13, lineHeight: 18},
-  markRow: {flexDirection: 'row', gap: 6, marginTop: 6},
+  markRow: {flexDirection: 'row', gap: 6, marginTop: 8},
   chip: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#D2CFC7',
+    borderColor: palette.panelEdge,
   },
-  chipEarned: {backgroundColor: palette.safe, borderColor: palette.safe},
-  chipText: {color: palette.textMuted, fontSize: 10, fontWeight: '700'},
-  chipTextEarned: {color: '#FFFFFF'},
+  chipEarned: {backgroundColor: palette.safeDeep, borderColor: palette.safe},
+  chipText: {
+    color: palette.textMuted,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  chipTextEarned: {color: palette.safe},
   stamp: {
     position: 'absolute',
     top: 10,

@@ -1,14 +1,21 @@
 /**
  * Sockets and the signal.
  *
- * Empty sockets are recessed dark diamonds and never glow during observation —
- * that would reveal the interaction before the analysis phase. During
- * intervention they expand slightly and pulse, and the signal becomes the
- * brightest object on screen. Amber appears nowhere else in the game.
+ * Amber appears nowhere else in the game, which is what makes one small arrow
+ * feel like the whole of the player's power. Empty sockets stay dark during
+ * observation and only light up once the analysis is over — showing them
+ * earlier would answer the question before it has been asked.
  */
 
 import React from 'react';
-import {Group, Path, RoundedRect, Skia} from '@shopify/react-native-skia';
+import {
+  BlurMask,
+  Circle,
+  Group,
+  Path,
+  RoundedRect,
+  Skia,
+} from '@shopify/react-native-skia';
 
 import {
   LevelDefinition,
@@ -24,38 +31,13 @@ interface Props {
   viewport: Viewport;
   showSockets: boolean;
   signal: SignalPlacement | null;
-  /** Where the player's finger is, while dragging. */
   dragPoint: {x: number; y: number} | null;
-  /** Socket the drag would snap to right now. */
   hoveredSocketId: string | null;
-  /** 0..1, drives the socket pulse. */
   phase: number;
 }
 
 function socketCentre(v: Viewport, socket: SignalSocketDefinition) {
   return cellCentre(v, socket.anchorCell);
-}
-
-/** An arrow drawn from the socket towards the first cell of the chosen edge. */
-function arrowPath(
-  centre: {x: number; y: number},
-  facing: {dx: number; dy: number},
-  size: number,
-) {
-  const path = Skia.Path.Make();
-  const px = -facing.dy;
-  const py = facing.dx;
-  const tipX = centre.x + facing.dx * size;
-  const tipY = centre.y + facing.dy * size;
-  const baseX = centre.x - facing.dx * size * 0.35;
-  const baseY = centre.y - facing.dy * size * 0.35;
-  path.moveTo(tipX, tipY);
-  path.lineTo(baseX + px * size * 0.62, baseY + py * size * 0.62);
-  path.lineTo(baseX + px * size * 0.24, baseY + py * size * 0.24);
-  path.lineTo(baseX - px * size * 0.24, baseY - py * size * 0.24);
-  path.lineTo(baseX - px * size * 0.62, baseY - py * size * 0.62);
-  path.close();
-  return path;
 }
 
 function facingFor(level: LevelDefinition, edgeId: string, from: Vec2) {
@@ -68,6 +50,146 @@ function facingFor(level: LevelDefinition, edgeId: string, from: Vec2) {
   const dy = first.y - from.y;
   const len = Math.hypot(dx, dy) || 1;
   return {dx: dx / len, dy: dy / len};
+}
+
+function arrowPath(
+  centre: {x: number; y: number},
+  facing: {dx: number; dy: number},
+  size: number,
+) {
+  const path = Skia.Path.Make();
+  const px = -facing.dy;
+  const py = facing.dx;
+  const tipX = centre.x + facing.dx * size;
+  const tipY = centre.y + facing.dy * size;
+  const baseX = centre.x - facing.dx * size * 0.4;
+  const baseY = centre.y - facing.dy * size * 0.4;
+  path.moveTo(tipX, tipY);
+  path.lineTo(baseX + px * size * 0.66, baseY + py * size * 0.66);
+  path.lineTo(baseX + px * size * 0.26, baseY + py * size * 0.26);
+  path.lineTo(baseX - px * size * 0.26, baseY - py * size * 0.26);
+  path.lineTo(baseX - px * size * 0.66, baseY - py * size * 0.66);
+  path.close();
+  return path;
+}
+
+function Socket({
+  centre,
+  cell,
+  hovered,
+  pulse,
+}: {
+  centre: {x: number; y: number};
+  cell: number;
+  hovered: boolean;
+  pulse: number;
+}) {
+  // The design's 8% breathing expansion, doubled while a drag is over it.
+  const scale = hovered ? 1.3 : 1 + 0.08 * pulse;
+  const r = cell * 0.24 * scale;
+
+  return (
+    <Group>
+      <Circle
+        cx={centre.x}
+        cy={centre.y}
+        r={r * 1.9}
+        color={palette.signal}
+        opacity={hovered ? 0.5 : 0.18 + 0.12 * pulse}>
+        <BlurMask blur={cell * 0.35} style="normal" />
+      </Circle>
+      <Circle
+        cx={centre.x}
+        cy={centre.y}
+        r={r}
+        color={palette.signal}
+        style="stroke"
+        strokeWidth={Math.max(1, cell * 0.06)}
+        opacity={hovered ? 1 : 0.8}
+      />
+      <Circle
+        cx={centre.x}
+        cy={centre.y}
+        r={r * 0.34}
+        color={palette.signalGlow}
+      />
+    </Group>
+  );
+}
+
+function SignalUnit({
+  centre,
+  facing,
+  cell,
+  beamTo,
+}: {
+  centre: {x: number; y: number};
+  facing: {dx: number; dy: number};
+  cell: number;
+  beamTo?: {x: number; y: number} | null;
+}) {
+  const size = cell * 0.44;
+
+  return (
+    <Group>
+      {/* The beam states the direction without previewing the route. */}
+      {beamTo && (
+        <Group>
+          <Path
+            path={(() => {
+              const p = Skia.Path.Make();
+              p.moveTo(centre.x + facing.dx * size, centre.y + facing.dy * size);
+              p.lineTo(beamTo.x, beamTo.y);
+              return p;
+            })()}
+            style="stroke"
+            strokeWidth={Math.max(1.5, cell * 0.09)}
+            strokeCap="round"
+            color={palette.signal}
+            opacity={0.55}>
+            <BlurMask blur={cell * 0.22} style="normal" />
+          </Path>
+          <Path
+            path={arrowPath(beamTo, facing, cell * 0.3)}
+            color={palette.signalGlow}
+          />
+        </Group>
+      )}
+
+      <RoundedRect
+        x={centre.x - size}
+        y={centre.y - size}
+        width={size * 2}
+        height={size * 2}
+        r={size * 0.28}
+        color={palette.signal}
+        opacity={0.35}>
+        <BlurMask blur={cell * 0.4} style="normal" />
+      </RoundedRect>
+      <RoundedRect
+        x={centre.x - size}
+        y={centre.y - size}
+        width={size * 2}
+        height={size * 2}
+        r={size * 0.24}
+        color={palette.wall}
+      />
+      <RoundedRect
+        x={centre.x - size}
+        y={centre.y - size}
+        width={size * 2}
+        height={size * 2}
+        r={size * 0.24}
+        color={palette.signal}
+        style="stroke"
+        strokeWidth={Math.max(1.5, cell * 0.07)}
+      />
+      <Path
+        path={arrowPath(centre, facing, size * 0.66)}
+        color={palette.signalGlow}
+      />
+    </Group>
+  );
 }
 
 function SignalLayerImpl({
@@ -83,6 +205,7 @@ function SignalLayerImpl({
     return null;
   }
 
+  const c = viewport.cell;
   const pulse = 0.5 + 0.5 * Math.sin(phase * Math.PI * 2);
   const nodes: React.ReactNode[] = [];
 
@@ -91,22 +214,13 @@ function SignalLayerImpl({
       if (signal?.socketId === socket.id) {
         continue;
       }
-      const c = socketCentre(viewport, socket);
-      const hovered = hoveredSocketId === socket.id;
-      // 8% expansion while available, per the design.
-      const size = viewport.cell * 0.3 * (hovered ? 1.25 : 1 + 0.08 * pulse);
-      const diamond = Skia.Path.Make();
-      diamond.moveTo(c.x, c.y - size);
-      diamond.lineTo(c.x + size, c.y);
-      diamond.lineTo(c.x, c.y + size);
-      diamond.lineTo(c.x - size, c.y);
-      diamond.close();
       nodes.push(
-        <Path
+        <Socket
           key={`sock${socket.id}`}
-          path={diamond}
-          color={hovered ? palette.signal : palette.wall}
-          opacity={hovered ? 1 : 0.55}
+          centre={socketCentre(viewport, socket)}
+          cell={c}
+          hovered={hoveredSocketId === socket.id}
+          pulse={pulse}
         />,
       );
     }
@@ -114,45 +228,30 @@ function SignalLayerImpl({
 
   if (signal) {
     const socket = level.signalSockets.find(s => s.id === signal.socketId);
-    const junction = level.graph.nodes.find(
-      n => n.id === socket?.junctionId,
-    );
+    const junction = level.graph.nodes.find(n => n.id === socket?.junctionId);
+    const edge = level.graph.edges.find(e => e.id === signal.edgeId);
     if (socket && junction) {
-      const c = socketCentre(viewport, socket);
+      const centre = socketCentre(viewport, socket);
       const facing = facingFor(level, signal.edgeId, junction.cell);
-      const size = viewport.cell * 0.42;
+      // Point at the third cell along: enough to state a direction, far short
+      // of showing where the corridor goes.
+      const beamCell = edge?.cells[Math.min(2, edge.cells.length - 1)];
       nodes.push(
-        <Group key="signal">
-          <RoundedRect
-            x={c.x - size * 0.75}
-            y={c.y - size * 0.75}
-            width={size * 1.5}
-            height={size * 1.5}
-            r={size * 0.24}
-            color={palette.wall}
-          />
-          <Path path={arrowPath(c, facing, size * 0.62)} color={palette.signal} />
-        </Group>,
+        <SignalUnit
+          key="signal"
+          centre={centre}
+          facing={facing}
+          cell={c}
+          beamTo={beamCell ? cellCentre(viewport, beamCell) : null}
+        />,
       );
     }
   }
 
   if (dragPoint) {
-    const size = viewport.cell * 0.42;
     nodes.push(
-      <Group key="drag" opacity={0.9}>
-        <RoundedRect
-          x={dragPoint.x - size * 0.75}
-          y={dragPoint.y - size * 0.75}
-          width={size * 1.5}
-          height={size * 1.5}
-          r={size * 0.24}
-          color={palette.wall}
-        />
-        <Path
-          path={arrowPath(dragPoint, {dx: 0, dy: -1}, size * 0.62)}
-          color={palette.signal}
-        />
+      <Group key="drag" opacity={0.92}>
+        <SignalUnit centre={dragPoint} facing={{dx: 0, dy: -1}} cell={c} />
       </Group>,
     );
   }

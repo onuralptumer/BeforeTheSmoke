@@ -1,30 +1,38 @@
 /**
  * Route history.
  *
- * Slate indigo for what happened before, dusty coral for the route that ended
- * badly. Trails are drawn under people and over smoke, and are differentiated
- * by weight as well as hue — the analysis view draws them directly on top of
- * the smoke mass, so colour alone would not separate them.
+ * Three readings, separated by weight and dash as well as hue so they survive
+ * being drawn over smoke: what was observed (thin, dashed, pale), what ended
+ * badly (heavier, dashed, red), and what got out (bright teal, continuous,
+ * glowing). Corners are rounded because people take corners, and a hard
+ * polyline reads as a diagram rather than a path someone walked.
  */
 
 import React from 'react';
-import {Group, Path, Skia} from '@shopify/react-native-skia';
+import {
+  BlurMask,
+  CornerPathEffect,
+  DashPathEffect,
+  Group,
+  Path,
+  Skia,
+} from '@shopify/react-native-skia';
 
 import {Vec2} from '../../game/types';
 import {Viewport, cellCentre} from '../geometry';
 import {palette} from '../../theme';
 
-interface Trail {
+export type TrailVariant = 'observed' | 'failed' | 'rescued' | 'ghost';
+
+export interface Trail {
   id: string;
   cells: Vec2[];
-  failed: boolean;
+  variant: TrailVariant;
 }
 
 interface Props {
   viewport: Viewport;
   trails: Trail[];
-  /** Ghosts of the previous attempt, drawn fainter and thinner. */
-  ghost?: boolean;
 }
 
 function buildPath(viewport: Viewport, cells: Vec2[]) {
@@ -40,26 +48,80 @@ function buildPath(viewport: Viewport, cells: Vec2[]) {
   return path;
 }
 
-function TrailLayerImpl({viewport, trails, ghost = false}: Props) {
+const style: Record<
+  TrailVariant,
+  {color: string; width: number; opacity: number; dash: boolean; glow: boolean}
+> = {
+  observed: {
+    color: palette.routeHistory,
+    width: 0.07,
+    opacity: 0.55,
+    dash: true,
+    glow: false,
+  },
+  failed: {
+    color: palette.danger,
+    width: 0.1,
+    opacity: 0.95,
+    dash: true,
+    glow: true,
+  },
+  rescued: {
+    color: palette.safe,
+    width: 0.12,
+    opacity: 0.95,
+    dash: false,
+    glow: true,
+  },
+  ghost: {
+    color: palette.routeHistory,
+    width: 0.05,
+    opacity: 0.22,
+    dash: true,
+    glow: false,
+  },
+};
+
+function TrailLayerImpl({viewport, trails}: Props) {
+  const c = viewport.cell;
+
   return (
     <Group>
       {trails.map(trail => {
         if (trail.cells.length < 2) {
           return null;
         }
+        const s = style[trail.variant];
+        const path = buildPath(viewport, trail.cells);
+        const width = Math.max(1.2, c * s.width);
+
         return (
-          <Path
-            key={`${ghost ? 'g' : 't'}${trail.id}`}
-            path={buildPath(viewport, trail.cells)}
-            style="stroke"
-            strokeWidth={
-              ghost ? viewport.cell * 0.08 : viewport.cell * (trail.failed ? 0.16 : 0.11)
-            }
-            strokeCap="round"
-            strokeJoin="round"
-            color={trail.failed ? palette.routeFailed : palette.routeHistory}
-            opacity={ghost ? 0.3 : trail.failed ? 0.9 : 0.4}
-          />
+          <Group key={`${trail.variant}-${trail.id}`}>
+            {s.glow && (
+              <Path
+                path={path}
+                style="stroke"
+                strokeWidth={width * 2.6}
+                strokeCap="round"
+                strokeJoin="round"
+                color={s.color}
+                opacity={0.3}>
+                <CornerPathEffect r={c * 0.4} />
+                <BlurMask blur={c * 0.3} style="normal" />
+              </Path>
+            )}
+            <Path
+              path={path}
+              style="stroke"
+              strokeWidth={width}
+              strokeCap="round"
+              strokeJoin="round"
+              color={s.color}
+              opacity={s.opacity}>
+              <CornerPathEffect r={c * 0.4} />
+              {s.dash && <DashPathEffect intervals={[c * 0.3, c * 0.26]} phase={0} />}
+            </Path>
+          </Group>
         );
       })}
     </Group>
@@ -67,4 +129,3 @@ function TrailLayerImpl({viewport, trails, ghost = false}: Props) {
 }
 
 export const TrailLayer = React.memo(TrailLayerImpl);
-export type {Trail};

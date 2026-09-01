@@ -5,10 +5,12 @@
  */
 
 import {
-  boundingWalls,
-  cellAtPoint,
+  contentBounds,
   fitViewport,
+  fitViewportToContent,
   lerpCentre,
+  cellAtPoint,
+  cellCentre,
 } from '../src/rendering/geometry';
 import {WorldMap} from '../src/game/engine/world';
 import {LEVELS} from '../src/game/levels';
@@ -21,6 +23,7 @@ describe('viewport', () => {
     expect(v.height).toBe(600);
     expect(v.originX).toBe(0);
     expect(v.originY).toBe(50);
+    expect(v.frameX).toBe(v.originX);
   });
 
   it('maps a touch back to the cell under it, and rejects the margin', () => {
@@ -32,70 +35,72 @@ describe('viewport', () => {
 
   it('interpolates between two cells', () => {
     const v = fitViewport(390, 700, 13, 20);
-    const mid = lerpCentre(v, {x: 0, y: 0}, {x: 1, y: 0}, 0.5);
-    expect(mid).toEqual({x: 30, y: 65});
+    expect(lerpCentre(v, {x: 0, y: 0}, {x: 1, y: 0}, 0.5)).toEqual({
+      x: 30,
+      y: 65,
+    });
   });
 });
 
-describe('bounding walls', () => {
-  it('keeps only wall cells that touch something walkable', () => {
-    // A single walkable cell in the middle of a 5x5 block: exactly the eight
-    // cells around it should be painted, not the other sixteen.
-    const walls = boundingWalls((x, y) => !(x === 2 && y === 2), 5, 5);
-    expect(walls).toHaveLength(8);
-    expect(walls).toContainEqual({x: 1, y: 1});
-    expect(walls).toContainEqual({x: 3, y: 3});
-    expect(walls).not.toContainEqual({x: 0, y: 0});
+describe('content framing', () => {
+  it('finds the occupied rectangle with a margin', () => {
+    // One walkable cell at (5,5) in a 13x20 grid.
+    const bounds = contentBounds((x, y) => !(x === 5 && y === 5), 13, 20);
+    expect(bounds).toEqual({minX: 4, minY: 4, maxX: 6, maxY: 6});
   });
 
-  it('never paints the whole sheet for a real level', () => {
+  it('falls back to the whole grid when nothing is walkable', () => {
+    expect(contentBounds(() => true, 13, 20)).toEqual({
+      minX: 0,
+      minY: 0,
+      maxX: 12,
+      maxY: 19,
+    });
+  });
+
+  it('keeps cell coordinates mapping through the shifted origin', () => {
+    const bounds = {minX: 4, minY: 10, maxX: 8, maxY: 16};
+    const v = fitViewportToContent(350, 700, bounds);
+    // The first framed cell must land at the top-left of the visible frame.
+    const first = cellCentre(v, {x: bounds.minX, y: bounds.minY});
+    expect(first.x).toBeCloseTo(v.frameX + v.cell / 2);
+    expect(first.y).toBeCloseTo(v.frameY + v.cell / 2);
+  });
+
+  it('gives every level a larger cell than fitting the whole grid would', () => {
     for (const level of LEVELS) {
       const map = new WorldMap(level);
-      const walls = boundingWalls(
+      const bounds = contentBounds(
         (x, y) => map.tiles[y][x] === 'WALL',
         level.width,
         level.height,
       );
-      const total = level.width * level.height;
-      // The regression this guards: filling every empty cell turned a sparse
-      // level into a black slab.
-      expect(walls.length).toBeLessThan(total * 0.6);
-      expect(walls.length).toBeGreaterThan(0);
+      const framed = fitViewportToContent(360, 640, bounds);
+      const whole = fitViewport(360, 640, level.width, level.height);
+      expect(framed.cell).toBeGreaterThanOrEqual(whole.cell);
+      // And the framed area must still contain the whole level.
+      expect(bounds.maxX - bounds.minX + 1).toBeLessThanOrEqual(level.width);
+      expect(bounds.maxY - bounds.minY + 1).toBeLessThanOrEqual(level.height);
     }
   });
 
-  it('encloses every walkable cell', () => {
+  it('frames every walkable cell of every level', () => {
     for (const level of LEVELS) {
       const map = new WorldMap(level);
-      const painted = new Set(
-        boundingWalls(
-          (x, y) => map.tiles[y][x] === 'WALL',
-          level.width,
-          level.height,
-        ).map(c => `${c.x},${c.y}`),
+      const b = contentBounds(
+        (x, y) => map.tiles[y][x] === 'WALL',
+        level.width,
+        level.height,
       );
       for (let y = 0; y < level.height; y++) {
         for (let x = 0; x < level.width; x++) {
           if (map.tiles[y][x] === 'WALL') {
             continue;
           }
-          // Every wall cell orthogonally touching a corridor must be drawn,
-          // or the plan would leak into the background.
-          for (const [dx, dy] of [
-            [0, -1],
-            [1, 0],
-            [0, 1],
-            [-1, 0],
-          ]) {
-            const nx = x + dx;
-            const ny = y + dy;
-            const outside =
-              nx < 0 || ny < 0 || nx >= level.width || ny >= level.height;
-            if (outside || map.tiles[ny][nx] !== 'WALL') {
-              continue;
-            }
-            expect(painted.has(`${nx},${ny}`)).toBe(true);
-          }
+          expect(x).toBeGreaterThanOrEqual(b.minX);
+          expect(x).toBeLessThanOrEqual(b.maxX);
+          expect(y).toBeGreaterThanOrEqual(b.minY);
+          expect(y).toBeLessThanOrEqual(b.maxY);
         }
       }
     }

@@ -1,17 +1,13 @@
 /**
- * The map. One Skia canvas, five layers, no nested React components per
- * person — the whole scene is one draw tree that reads a frame snapshot.
+ * The map. One Skia canvas, six layers, no nested React component per person —
+ * the whole scene is a single draw tree reading one frame snapshot.
  */
 
 import React, {useMemo} from 'react';
 import {StyleSheet} from 'react-native';
 import {Canvas, Rect} from '@shopify/react-native-skia';
 
-import {
-  LevelDefinition,
-  SignalPlacement,
-  Vec2,
-} from '../game/types';
+import {LevelDefinition, SignalPlacement, Vec2} from '../game/types';
 import {WorldMap} from '../game/engine/world';
 import {RecordedRun} from '../game/replay/record';
 import {Viewport, lerpCentre} from './geometry';
@@ -36,13 +32,11 @@ interface Props {
   hoveredSocketId: string | null;
   /** Trails from the baseline attempt, drawn as ghosts. */
   ghostRun?: RecordedRun | null;
-  /** Show finished route trails — analysis and result only. */
+  /** Finished route trails — analysis and result only. */
   showTrails: boolean;
-  /** Drop the environment back slightly so the analysis reads over it. */
+  /** Drop the building back so the analysis marks read over it. */
   dim: boolean;
   criticalCell: Vec2 | null;
-  stallCells: Vec2[];
-  previewCells: Vec2[];
   phase: number;
 }
 
@@ -61,12 +55,11 @@ export function GameCanvas({
   showTrails,
   dim,
   criticalCell,
-  stallCells,
-  previewCells,
   phase,
 }: Props) {
-  const frame = run.frames[Math.min(tickIndex, run.frames.length - 1)];
-  const previous = run.frames[Math.max(0, Math.min(tickIndex, run.frames.length - 1) - 1)];
+  const index = Math.min(tickIndex, run.frames.length - 1);
+  const frame = run.frames[index];
+  const previous = run.frames[Math.max(0, index - 1)];
 
   const people: PersonView[] = useMemo(() => {
     const prevById = new Map(previous.agents.map(a => [a.id, a]));
@@ -100,7 +93,11 @@ export function GameCanvas({
     return [...run.trails.entries()].map(([id, cells]) => ({
       id,
       cells: cells as Vec2[],
-      failed: lost.has(id),
+      variant: lost.has(id)
+        ? ('failed' as const)
+        : run.result.success
+        ? ('rescued' as const)
+        : ('observed' as const),
     }));
   }, [run, showTrails]);
 
@@ -111,9 +108,23 @@ export function GameCanvas({
     return [...ghostRun.trails.entries()].map(([id, cells]) => ({
       id: `ghost-${id}`,
       cells: cells as Vec2[],
-      failed: false,
+      variant: 'ghost' as const,
     }));
   }, [ghostRun, showTrails]);
+
+  const lostCells: Vec2[] = useMemo(() => {
+    if (!showTrails) {
+      return [];
+    }
+    return run.result.failedAgentIds
+      .map(id => frame.agents.find(a => a.id === id)?.cell ?? null)
+      .filter((c): c is Vec2 => c !== null);
+  }, [showTrails, run, frame]);
+
+  const stallCells: Vec2[] = useMemo(
+    () => (showTrails ? run.stalls : []),
+    [showTrails, run],
+  );
 
   return (
     <Canvas style={styles.canvas}>
@@ -128,27 +139,24 @@ export function GameCanvas({
         smokeCells={frame.smokeCells}
         phase={phase}
       />
-      {/* The wash sits above the environment and below everything that
-          explains it, so trails and the signal stay at full strength. */}
+      {/* The wash sits above the building and below everything that explains
+          it, so trails, marks and the signal stay at full strength. */}
       {dim && (
         <Rect
-          x={viewport.originX}
-          y={viewport.originY}
+          x={viewport.frameX}
+          y={viewport.frameY}
           width={viewport.width}
           height={viewport.height}
-          color={palette.background}
-          opacity={0.2}
+          color={palette.shell}
+          opacity={0.3}
         />
       )}
-      {ghostTrails.length > 0 && (
-        <TrailLayer viewport={viewport} trails={ghostTrails} ghost />
-      )}
-      {trails.length > 0 && <TrailLayer viewport={viewport} trails={trails} />}
+      <TrailLayer viewport={viewport} trails={[...ghostTrails, ...trails]} />
       <OverlayLayer
         viewport={viewport}
         criticalCell={criticalCell}
+        lostCells={lostCells}
         stallCells={stallCells}
-        previewCells={previewCells}
         phase={phase}
       />
       <SignalLayer
@@ -166,5 +174,5 @@ export function GameCanvas({
 }
 
 const styles = StyleSheet.create({
-  canvas: {flex: 1, backgroundColor: palette.background},
+  canvas: {flex: 1, backgroundColor: palette.shell},
 });

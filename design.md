@@ -6,15 +6,18 @@ This document describes only what the ten-level prototype renders. Where it prev
 
 ## 1. Design vision
 
-**Before the Smoke** should feel like a living architectural plan rather than a conventional puzzle game. The player observes a calm public space, notices the beginnings of a disaster, and changes the outcome by placing one directional signal.
+**Before the Smoke** should feel like a lit architectural plan on a dark ground rather than a conventional puzzle game. The player observes a calm public space, notices the beginnings of a disaster, and changes the outcome by placing one directional signal.
 
 The visual direction is **Living Floor Plan**:
 
+- A dark shell. The building is the only lit thing on screen: warm floor plates inside thin structural walls, glowing as if seen from above at night.
 - Top-down rooms and corridors built from clean geometric forms.
 - Simplified people whose roles and intentions remain readable at a small scale.
-- Restrained environmental colour, with strong emphasis reserved for the signal, exits, smoke, and the moment of failure.
+- Light is reserved for the three things that carry meaning: **teal** for safety, **amber** for the player's one intervention, **red** for the moment it went wrong. Everything else stays quiet.
 - Smoke and crowd movement create the tension. No large flames.
 - The player should feel like an emergency-flow analyst making one precise intervention.
+
+**Framing.** Levels are authored on a common 13 × 20 grid but most use a fraction of it. The camera frames the occupied rectangle with a one-cell margin, so every incident fills the screen at the largest cell size it can rather than floating in empty ground.
 
 Each level progresses through four visual states: **calm order**, **small warning**, **crowd disruption**, **relief or failure**. The original list also included "growing uncertainty — blocked sightlines". There is no visibility system in the simulation; smoke does not occlude anyone's sight, and rendering it as if it did would misrepresent how people choose routes. Uncertainty is communicated through hesitation at junctions and through the event strip, not through fog of war.
 
@@ -24,23 +27,29 @@ Each level progresses through four visual states: **calm order**, **small warnin
 
 | Purpose | Colour | Hex | Usage |
 |---|---|---:|---|
-| Background | Warm off-white | `#F1EFE9` | Empty space and calm interface surfaces |
-| Floor | Concrete grey | `#D9D8D3` | Walkable architectural areas |
-| Walls | Graphite | `#252A30` | Structural boundaries and strong contrast |
-| Secondary structures | Steel grey | `#8E969E` | Doors, barriers and fixtures |
-| Player signal | Industrial amber | `#F2B544` | The player's intervention and primary interaction |
-| Safe exit | Deep teal | `#2F806F` | Exits, rescued people, resolved safe states |
-| Smoke | Blue-grey | `#66727D` | Hazard volume |
-| Route history | Slate indigo | `#4A5F87` | Previous or observed movement paths |
-| Failed route | Dusty coral | `#C97367` | The route that ended in exposure or a shut door |
-| Primary text | Near-black | `#191D21` | Labels and readable interface text |
+| Shell | Near-black | `#15181B` | Behind everything, and the chrome |
+| Panel | Charcoal | `#1B1F23` | The dock and archive cards |
+| Panel edge | Slate | `#2A2F35` | Hairline borders and the timeline track |
+| Ground | Cool black | `#1E2226` | Outside the building footprint |
+| Floor | Warm bone | `#C9C0B1` | Walkable plates — the only large light area |
+| Wall | Graphite | `#22262B` | Structural boundary line |
+| Wall trim | Steel | `#3A4149` | Thin light line inside the wall, so the plan keeps its outline against the dark ground |
+| Fixtures | Steel grey | `#8A9299` | Door leaves and secondary structure |
+| Player signal | Industrial amber | `#F2A93B` | The player's intervention and primary interaction |
+| Signal glow | Bright amber | `#FFC85E` | The arrow face and beam head |
+| Safe | Bright teal | `#3FD9AE` | Exit signs, rescued people, resolved routes |
+| Safe deep | Teal shadow | `#1E6A57` | Exit sign plate, earned marks |
+| Smoke | Cool grey | `#9AA3AB` | Hazard volume |
+| Danger | Ember red | `#E04B39` | The failure, the decision that caused it, a shut door |
+| Route history | Bone | `#D8DCE0` | Observed movement |
+| Text | Off-white | `#E8EBED` | Labels and readable interface text |
+| Muted text | Slate grey | `#7C848C` | Secondary labels |
 
-Two corrections from the original palette:
+Three notes on the system:
 
-- **Route history moved** from `#6687A6` to `#4A5F87`. The old value was a muted blue-grey sitting a few steps from the smoke blue-grey `#66727D`, and the analysis view draws route trails directly on top of smoke. Separate them by weight and dash pattern as well as hue.
-- **Ember red `#D9573F` is removed.** It existed for fire, and no level in the prototype has fire. Removing it also resolves its confusability with the dusty coral failed-route colour, which is the only warm accent left and now unambiguous.
-
-Amber is reserved for the player's single intervention. If amber appears anywhere else, the signal loses its psychological weight.
+- **Walls need two lines.** A dark wall against a dark ground is invisible; the plan only reads because a heavy graphite line is centred on the boundary and a thin steel trim sits just inside it, catching the light floor.
+- **Amber is reserved for the player's single intervention.** If amber appears anywhere else, the signal loses its psychological weight.
+- **Red does two jobs and must distinguish them.** A reticle marks the *decision*; a cross marks the *consequence*. A player who only ever looks at the cross will keep trying to fix the symptom, which is the failure mode Level 10 is built to break.
 
 Colour is never the only carrier of information. Icons, outlines, movement patterns and shape reinforce every important state.
 
@@ -56,9 +65,9 @@ The prototype needs seven drawable things:
 | Wall | Visually heavier than everything else |
 | Door | Immediately distinguishable open and closed states |
 | Junction | Reads as a decision point without being decorated |
-| Exit | Door pictogram plus outward motion lines |
+| Exit | Teal plate, jamb-and-arrow pictogram, and a glow spilling onto the surrounding floor so it is findable through light smoke |
 | Smoke | See §5 |
-| Signal socket | Recessed dark diamond when empty |
+| Signal socket | Dark and inert during observation; an amber ring with a bright core once placement opens |
 
 That is the whole kit. The original document also specified stairwells, turnstiles, security gates, glass dividers, benches, vending machines, reception desks, plants, luggage, counters, floor arrows, fire extinguishers and emergency lights, plus ten candidate location themes. None of it is used by any of the ten levels, stairwells contradict the multi-floor exclusion in the mechanical spec, and turnstiles imply capacity and delay mechanics that do not exist. All deferred — see §16.
 
@@ -94,9 +103,9 @@ Two states from the original table are removed because the simulation does not i
 
 Smoke is both a threat and a readable simulation system. It must feel organic without hiding the grid.
 
-Layers: a translucent blue-grey base mass; slow procedural noise within it; soft distortion at the outer edge; sparse drifting particles; slightly higher opacity near the source.
+Built from soft overlapping volumes rather than filled cells, so it reads as something seeping through the building: two blurred masses per affected cell, offset by a fixed per-cell hash so neighbours never pulse in lockstep and nothing is random.
 
-Cell boundaries stay readable beneath it. The player must be able to tell exactly which cell becomes dangerous and when — the difference between three cells of smoke and four is the difference between a survivable corridor and a lethal one.
+A crisp inner square marks each affected cell so the boundary stays countable beneath the volume. The player must be able to tell exactly which cell becomes dangerous and when — the difference between three cells of smoke and four is the difference between a survivable corridor and a lethal one.
 
 Exposure reads in three steps against a limit of four:
 
@@ -168,7 +177,9 @@ This is the central psychological mechanism: under uncertainty people do not onl
 
 An emergency-analysis instrument, not a mobile puzzle game.
 
-Top bar: safe count, tick counter, pause and speed, sound.
+Top bar: incident number and title on the left; elapsed clock, sound toggle and pause on the right. The safe count sits over the plan itself, top-right, where the player is already looking.
+
+The dock at the bottom is a single panel that changes with the phase, and its label states the phase in one word: `WATCH`, `ANALYZE`, `PLACE ONE SIGNAL`, `REPLAY`, `EVERYONE OUT`. Analysis and placement are deliberately separate steps — sockets stay hidden while the player is still reading what went wrong, so the interface never answers the question before it has been asked.
 
 | Phase | Primary controls |
 |---|---|
@@ -225,7 +236,7 @@ The hero object. It must feel more deliberate than anything else on screen.
 
 Construction: graphite metal casing, bright amber arrow face, thin illuminated edge, a small mounting stem, high contrast that survives light smoke.
 
-Empty sockets are recessed dark diamonds. They do not glow during observation — that would reveal the interaction before the analysis phase.
+Empty sockets are dark and inert during observation — lighting them would reveal the interaction before the analysis phase. Once placement opens they become amber rings with a bright core, breathing at 8% and expanding sharply under a drag.
 
 Placement:
 
@@ -234,7 +245,7 @@ Placement:
 3. Dragging near a socket creates a mild magnetic pull, snapping to the **nearest** eligible socket within 32 pt.
 4. An amber guide line confirms the target.
 5. Placement produces a precise metallic click and a medium haptic.
-6. A short floor projection previews the chosen direction across the first three cells only.
+6. A glowing beam leaves the unit and ends in an arrowhead three cells along — enough to state a direction, far short of showing where the corridor goes.
 7. Rotation feels mechanical, with distinct notches.
 
 The signal never bounces or behaves like a toy. Its motion is engineered, reliable, consequential.

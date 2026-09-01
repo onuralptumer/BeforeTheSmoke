@@ -63,12 +63,13 @@ function App() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <StatusBar barStyle="dark-content" />
+        <StatusBar barStyle="light-content" />
         <View style={styles.root}>
           {level ? (
             <GameScreen
               key={level.id}
               level={level}
+              levelNumber={currentIndex + 1}
               onExit={() => setLevel(null)}
               onNext={following ? () => setLevel(following) : null}
               onResult={handleResult}
@@ -85,7 +86,7 @@ function App() {
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: palette.background},
+  root: {flex: 1, backgroundColor: palette.shell},
 });
 
 export default App;

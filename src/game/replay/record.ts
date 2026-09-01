@@ -27,6 +27,8 @@ export interface RecordedRun {
   result: RunResult;
   /** Per person, the cells they stood on in order. Drives the route trails. */
   trails: Map<string, Vec2[]>;
+  /** Where people failed without moving. See `stalledFailures`. */
+  stalls: Vec2[];
   lastTick: number;
 }
 
@@ -56,15 +58,19 @@ export function recordRun(
     }
   }
 
-  return {
+  const result = engine.result();
+  const run: RecordedRun = {
     levelId: level.id,
     signal,
     frames,
     decisions: engine.decisionLog,
-    result: engine.result(),
+    result,
     trails,
+    stalls: [],
     lastTick: frames[frames.length - 1].tick,
   };
+  run.stalls = stalledFailures(run);
+  return run;
 }
 
 export interface TimelineEvent {
@@ -153,23 +159,6 @@ export function stalledFailures(run: RecordedRun): Vec2[] {
     }
   }
   return cells;
-}
-
-/**
- * The first cells of the corridor a placed signal points down. Deliberately
- * short: previewing the whole route would answer the question the level is
- * asking.
- */
-export function signalPreviewCells(
-  level: LevelDefinition,
-  signal: SignalPlacement | null,
-  count = 3,
-): Vec2[] {
-  if (!signal) {
-    return [];
-  }
-  const edge = level.graph.edges.find(e => e.id === signal.edgeId);
-  return edge ? edge.cells.slice(0, count) : [];
 }
 
 /** The cell of the junction this level blames for the failure. */
