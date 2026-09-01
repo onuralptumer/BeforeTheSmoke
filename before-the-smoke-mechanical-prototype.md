@@ -781,11 +781,12 @@ None of these are needed to test the central hypothesis. If people do not want t
 4. Single signal and decision logging ✅
 5. Validation harness and determinism tests ✅
 6. All ten levels as validated data ✅
-7. Skia rendering: floor, walls, people, hazards, signal
-8. Game screen phase machine (Observation → Analysis → Intervention → Replay → Result)
-9. Analysis view: trails, event strip, before/after
-10. Level select and persistence
-11. Audio, haptics and visual polish
+7. Skia rendering: floor, walls, people, hazards, signal ✅
+8. Game screen phase machine (Intro → Observing → Analyzing ⇄ Replaying → Result) ✅
+9. Analysis view: trails, event strip, before/after ✅
+10. Incident Archive and persistence ✅
+11. Haptics ✅
+12. Sound and visual polish
 
 The harness comes before rendering deliberately. A level whose numbers are wrong is invisible on screen and obvious in a test.
 
