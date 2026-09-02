@@ -63,7 +63,14 @@ export const level07: LevelDefinition = {
   ],
   // The exit tile itself is the door, so people are turned away while still
   // standing on the junction rather than stranded halfway down a corridor.
-  events: [{tick: 12, type: 'CLOSE_DOOR', cell: at(0, 10)}],
+  events: [
+    // Creeping up the southern spur behind the deadlock. Atmosphere only: the
+    // counterflow is the hazard here, and this never touches it.
+    {tick: 8, type: 'ADD_SMOKE', cells: [at(5, 14), at(5, 13)]},
+    {tick: 10, type: 'ADD_SMOKE', cells: [at(5, 12), at(5, 11)]},
+    {tick: 12, type: 'ADD_SMOKE', cells: [at(6, 11), at(7, 11)]},
+    {tick: 12, type: 'CLOSE_DOOR', cell: at(0, 10)},
+  ],
   maxTicks: 50,
   parFinishTick: 18,
   maxWaitTicksForFlow: 4,

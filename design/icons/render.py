@@ -1,7 +1,11 @@
-import json, io, cairosvg
+import json, io, os, cairosvg
 from PIL import Image, ImageDraw, ImageFont
 
-data = json.load(open('/home/claude/icons/icons.json'))
+# Needs cairosvg and Pillow, which the repo does not vendor; this is an
+# author-time tool, not part of the app build. Paths resolve from this file.
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+data = json.load(open(os.path.join(HERE, 'icons.json')))
 ICONS = data['icons']
 SW = data['strokeWidth']
 S = 3  # supersample
@@ -53,8 +57,8 @@ def sheet(path, bg, color, sizes, grid=False, label='#7C848C', cols=6):
         d.rectangle([ox, oy, ox+cw-1, oy+ch-1], outline='#2A2F35')
     img.save(path)
 
-sheet('/home/claude/icons/sheet_dark.png',  '#1B1F23', '#E8EBED', [16,24,48])
-sheet('/home/claude/icons/sheet_small.png', '#1B1F23', '#E8EBED', [10,12,16], cols=8)
-sheet('/home/claude/icons/sheet_floor.png', '#C9C0B1', '#22262B', [24], label='#22262B', cols=8)
-sheet('/home/claude/icons/sheet_grid.png',  '#15181B', '#F2A93B', [72], grid=True, cols=4)
+sheet(os.path.join(HERE, 'sheet_dark.png'),  '#1B1F23', '#E8EBED', [16,24,48])
+sheet(os.path.join(HERE, 'sheet_small.png'), '#1B1F23', '#E8EBED', [10,12,16], cols=8)
+sheet(os.path.join(HERE, 'sheet_floor.png'), '#C9C0B1', '#22262B', [24], label='#22262B', cols=8)
+sheet(os.path.join(HERE, 'sheet_grid.png'),  '#15181B', '#F2A93B', [72], grid=True, cols=4)
 print('ok')

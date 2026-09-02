@@ -63,6 +63,12 @@ export const level06: LevelDefinition = {
     },
   ],
   events: [
+    // The merge and the doorway above it. This zone cannot grow: a group that
+    // is not redirected crosses three of these cells, and EXPOSURE_LIMIT is 4.
+    // Widening it by one cell on each approach makes every placement lethal and
+    // the level unsolvable — the size of this mass is the mechanism, not a
+    // rendering choice, and if it needs to read heavier it has to do so in
+    // HazardLayer.
     {
       tick: 7,
       type: 'ADD_SMOKE',

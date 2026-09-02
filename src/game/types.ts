@@ -105,6 +105,15 @@ export interface LevelDefinition {
   intendedSolutions: SignalPlacement[];
   /** Placements the level documents describe as traps. The harness requires these to fail. */
   temptingFailures: SignalPlacement[];
+  /**
+   * Room names for the drawing furniture, in tiny caps on the plan.
+   *
+   * Presentation only — nothing in the simulation reads these, and a level that
+   * names no rooms simply has none. The label is drawn from `cell` rightwards,
+   * so it needs corridor width to sit in; a one-cell-wide stair takes an
+   * abbreviation, not a full name.
+   */
+  rooms?: Array<{label: string; cell: Vec2}>;
 }
 
 export type AgentState = 'PENDING' | 'ACTIVE' | 'SAFE' | 'INCAPACITATED';

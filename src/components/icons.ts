@@ -145,3 +145,23 @@ export const markIcon = (
   earned: boolean,
 ): IconName =>
   (earned ? `mark-${mark}` : `mark-${mark}-outline`) as IconName;
+
+/**
+ * The four kinds record.ts emits onto the timeline. The union is repeated here
+ * rather than imported so this file stays free of game imports; TimelineEvent
+ * in src/game/replay/record.ts is the definition it must match.
+ */
+export const eventIcon = (
+  kind: 'DOOR' | 'SMOKE' | 'BLOCK' | 'FAILURE',
+): IconName => {
+  switch (kind) {
+    case 'DOOR':
+      return 'event-door';
+    case 'SMOKE':
+      return 'event-smoke';
+    case 'BLOCK':
+      return 'event-block';
+    case 'FAILURE':
+      return 'event-failure';
+  }
+};

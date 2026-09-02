@@ -14,6 +14,8 @@
 
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
+  Animated,
+  Easing,
   LayoutChangeEvent,
   Pressable,
   ScrollView,
@@ -35,6 +37,8 @@ import {
   recordRun,
   timelineFor,
 } from '../game/replay/record';
+import {Icon} from '../components/Icon';
+import {IconName, eventIcon, markIcon} from '../components/icons';
 import {GameCanvas} from '../rendering/GameCanvas';
 import {
   Viewport,
@@ -47,7 +51,19 @@ import {usePlayback} from '../state/usePlayback';
 import {usePulse} from '../state/usePulse';
 import {haptics} from '../audio/haptics';
 import {sounds} from '../audio/sounds';
-import {formatClock, formatPrecise, numeric, palette} from '../theme';
+import {
+  formatClock,
+  formatPrecise,
+  motion,
+  numeric,
+  palette,
+  pulseTicks,
+  radius,
+  space,
+  state,
+  tracking,
+  type,
+} from '../theme';
 
 type Phase =
   | 'INTRO'
@@ -59,6 +75,9 @@ type Phase =
 
 /** Snap radius for socket placement, in points. */
 const SNAP_RADIUS = 32;
+
+/** Timeline event glyph. Small, but not below where a silhouette survives. */
+const MARKER_SIZE = 12;
 
 interface Props {
   level: LevelDefinition;
@@ -134,7 +153,7 @@ export function GameScreen({
   const idlePulse = usePulse(explaining);
   const pulsePhase = explaining
     ? idlePulse
-    : (playback.tickIndex + playback.alpha) / 6.4;
+    : (playback.tickIndex + playback.alpha) / pulseTicks;
 
   const startBaseline = useCallback(() => {
     setPhase('OBSERVING');
@@ -309,6 +328,8 @@ export function GameScreen({
               dim={phase === 'ANALYZING'}
               criticalCell={blamedCell}
               phase={pulsePhase}
+              canvasWidth={mapSize.width}
+              canvasHeight={mapSize.height}
             />
           )}
 
@@ -331,8 +352,9 @@ export function GameScreen({
       </GestureDetector>
 
       <View style={[styles.dock, {paddingBottom: insets.bottom + 14}]}>
+        <DockPanel phaseKey={phase}>
         {phase === 'INTRO' && (
-          <ActionBar label="WATCH" onPress={startBaseline} glyph="eye" />
+          <ActionBar label="WATCH" onPress={startBaseline} glyph="watch" />
         )}
 
         {watching && (
@@ -370,8 +392,63 @@ export function GameScreen({
             onExit={onExit}
           />
         )}
+        </DockPanel>
       </View>
     </View>
+  );
+}
+
+/**
+ * The 220 ms panel transition from design.md §11.
+ *
+ * The dock swaps one of five components as the phase changes, and it used to do
+ * it in a single frame. This settles the incoming panel in instead: it rises
+ * eight points and fades, which is the "clean slide or fade" the spec asks for.
+ *
+ * There is deliberately no matching fade-out. A cross-fade would need both
+ * panels mounted at once and the dock is height-constrained, so the old one
+ * would push the new one around while both were visible.
+ *
+ * `useNativeDriver` is what makes this free: opacity and transform are handed
+ * to the platform, so none of it competes with the playback loop on the JS
+ * thread — which is the exact cost the rest of this pass is trying to remove.
+ */
+function DockPanel({
+  phaseKey,
+  children,
+}: {
+  phaseKey: string;
+  children: React.ReactNode;
+}) {
+  const enter = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    enter.setValue(0);
+    const animation = Animated.timing(enter, {
+      toValue: 1,
+      duration: motion.panelMs,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [phaseKey, enter]);
+
+  return (
+    <Animated.View
+      style={{
+        opacity: enter,
+        transform: [
+          {
+            translateY: enter.interpolate({
+              inputRange: [0, 1],
+              outputRange: [8, 0],
+            }),
+          },
+        ],
+      }}>
+      {children}
+    </Animated.View>
   );
 }
 
@@ -398,13 +475,24 @@ function TopBar({
 }) {
   return (
     <View style={styles.topBar}>
-      <Pressable onPress={onExit} accessibilityRole="button" hitSlop={12}>
-        <Text style={styles.incident}>
-          INCIDENT {String(levelNumber).padStart(2, '0')}
-        </Text>
-        <Text style={styles.incidentTitle} numberOfLines={1}>
-          {title}
-        </Text>
+      {/* The whole title block is the way back to the archive, so it needs to
+          look like a control. It used to be bare text with no glyph and no
+          label — tappable, but with nothing saying so. */}
+      <Pressable
+        onPress={onExit}
+        accessibilityRole="button"
+        accessibilityLabel="Back to the incident archive"
+        hitSlop={12}
+        style={styles.exit}>
+        <Icon name="chevron-left" size={16} color={palette.textMuted} />
+        <View>
+          <Text style={styles.incident}>
+            INCIDENT {String(levelNumber).padStart(2, '0')}
+          </Text>
+          <Text style={styles.incidentTitle} numberOfLines={1}>
+            {title}
+          </Text>
+        </View>
       </Pressable>
       <View style={styles.topRight}>
         <Text style={[styles.clock, numeric]}>{formatClock(tick)}</Text>
@@ -415,12 +503,12 @@ function TopBar({
           accessibilityState={{checked: !muted}}
           hitSlop={10}
           style={styles.iconButton}>
-          <View style={[styles.speaker, muted && styles.speakerMuted]}>
-            <View style={styles.speakerBody} />
-            <View style={styles.speakerCone} />
-            {!muted && <View style={styles.speakerWave} />}
-            {muted && <View style={styles.speakerSlash} />}
-          </View>
+          <Icon
+            name={muted ? 'sound-off' : 'sound-on'}
+            size={20}
+            color={palette.text}
+            opacity={muted ? 0.45 : 1}
+          />
         </Pressable>
         <Pressable
           onPress={canPause ? onTogglePlay : undefined}
@@ -437,15 +525,7 @@ function TopBar({
 }
 
 function PauseGlyph({playing}: {playing: boolean}) {
-  if (playing) {
-    return (
-      <View style={styles.pauseGlyph}>
-        <View style={styles.pauseBar} />
-        <View style={styles.pauseBar} />
-      </View>
-    );
-  }
-  return <View style={styles.playGlyph} />;
+  return <Icon name={playing ? 'pause' : 'play'} size={20} />;
 }
 
 function ActionBar({
@@ -455,7 +535,7 @@ function ActionBar({
 }: {
   label: string;
   onPress: () => void;
-  glyph: 'eye' | 'play' | 'pause';
+  glyph: IconName;
 }) {
   return (
     <Pressable
@@ -463,14 +543,13 @@ function ActionBar({
       accessibilityRole="button"
       onPress={onPress}>
       <Text style={styles.actionLabel}>{label}</Text>
-      {glyph === 'eye' && <View style={styles.eye} />}
-      {glyph === 'play' && <View style={styles.playGlyphLarge} />}
-      {glyph === 'pause' && (
-        <View style={styles.pauseGlyph}>
-          <View style={styles.pauseBarLarge} />
-          <View style={styles.pauseBarLarge} />
-        </View>
-      )}
+      {/* Teal for the two glyphs that mean "go", text for pause — the same
+          split the View-based glyphs had. */}
+      <Icon
+        name={glyph}
+        size={26}
+        color={glyph === 'pause' ? palette.text : palette.safe}
+      />
     </Pressable>
   );
 }
@@ -546,17 +625,24 @@ function Timeline({
     <View style={styles.timeline}>
       <View style={styles.track}>
         <View style={styles.trackFill} />
+        {/* record.ts emits four kinds — DOOR, SMOKE, BLOCK and FAILURE — and
+            all four used to draw as the same grey dot, so "Route blocked" was
+            indistinguishable from "Door closes" on the strip that exists to
+            say what happened. Each now has its own silhouette. */}
         {events.map((event, i) => {
           const left = `${Math.min(100, (event.tick / Math.max(1, lastTick)) * 100)}%`;
           return (
             <View
               key={`${event.tick}-${i}`}
-              style={[
-                styles.marker,
-                event.kind === 'FAILURE' && styles.markerFailure,
-                {left: left as unknown as number},
-              ]}
-            />
+              style={[styles.marker, {left: left as unknown as number}]}>
+              <Icon
+                name={eventIcon(event.kind)}
+                size={MARKER_SIZE}
+                color={
+                  event.kind === 'FAILURE' ? palette.danger : palette.textMuted
+                }
+              />
+            </View>
           );
         })}
       </View>
@@ -589,7 +675,7 @@ function PlacementBar({
         <Text style={styles.panelTitleSignal}>PLACE ONE SIGNAL</Text>
         <View style={styles.tray}>
           <View style={styles.trayChip}>
-            <View style={styles.trayArrow} />
+            <Icon name="signal-arrow" size={18} color={palette.signal} />
           </View>
           <Text style={styles.trayCount}>{signal ? 0 : 1}</Text>
         </View>
@@ -654,13 +740,15 @@ function ResultBar({
       </View>
       <Text style={styles.subCause}>Before the smoke.</Text>
       <View style={styles.marks}>
-        <Mark label="RESCUE" earned={marks.rescue} />
+        <Mark mark="rescue" label="RESCUE" earned={marks.rescue} />
         <Mark
+          mark="flow"
           label="FLOW"
           earned={marks.flow}
           detail={`${totalWaitTicks} waiting`}
         />
         <Mark
+          mark="swift"
           label="SWIFT"
           earned={marks.swift}
           detail={finishTick !== null ? formatClock(finishTick) : undefined}
@@ -678,17 +766,28 @@ function ResultBar({
 }
 
 function Mark({
+  mark,
   label,
   earned,
   detail,
 }: {
+  mark: 'rescue' | 'flow' | 'swift';
   label: string;
   earned: boolean;
   detail?: string;
 }) {
   return (
     <View style={styles.mark}>
-      <View style={[styles.markDot, earned && styles.markDotEarned]} />
+      {/* 12 px, not the 9 px dot this replaces: below about 12 no silhouette
+          holds, and three identical circles carried no meaning anyway. Earned
+          and unearned are different shapes rather than one shape at two
+          opacities — opacity alone vanishes in greyscale and reads as
+          "loading" rather than "not yet". */}
+      <Icon
+        name={markIcon(mark, earned)}
+        size={12}
+        color={earned ? palette.safe : palette.textMuted}
+      />
       <Text style={[styles.markLabel, earned && styles.markLabelEarned]}>
         {label}
       </Text>
@@ -703,88 +802,33 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    gap: 12,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.md,
+    gap: space.md,
   },
+  exit: {flexDirection: 'row', alignItems: 'center', gap: space.sm},
   incident: {
     color: palette.textMuted,
-    fontSize: 11,
+    fontSize: type.label,
     fontWeight: '700',
-    letterSpacing: 1.6,
+    letterSpacing: tracking.caps,
   },
-  incidentTitle: {color: palette.text, fontSize: 15, fontWeight: '600'},
+  incidentTitle: {color: palette.text, fontSize: type.title, fontWeight: '600'},
   topRight: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    gap: 14,
+    gap: space.lg,
   },
-  clock: {color: palette.text, fontSize: 15, fontWeight: '600'},
+  clock: {color: palette.text, fontSize: type.title, fontWeight: '600'},
   iconButton: {
     width: 30,
     height: 30,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconDisabled: {opacity: 0.3},
-  pauseGlyph: {flexDirection: 'row', gap: 3},
-  pauseBar: {width: 3, height: 13, backgroundColor: palette.text},
-  pauseBarLarge: {width: 4, height: 16, backgroundColor: palette.text},
-  playGlyph: {
-    width: 0,
-    height: 0,
-    borderTopWidth: 7,
-    borderBottomWidth: 7,
-    borderLeftWidth: 12,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderLeftColor: palette.text,
-  },
-  playGlyphLarge: {
-    width: 0,
-    height: 0,
-    borderTopWidth: 9,
-    borderBottomWidth: 9,
-    borderLeftWidth: 15,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderLeftColor: palette.safe,
-  },
-  speaker: {
-    width: 20,
-    height: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  speakerMuted: {opacity: 0.45},
-  speakerBody: {width: 4, height: 8, backgroundColor: palette.text},
-  speakerCone: {
-    width: 0,
-    height: 0,
-    borderTopWidth: 8,
-    borderBottomWidth: 8,
-    borderRightWidth: 6,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderRightColor: palette.text,
-  },
-  speakerWave: {
-    width: 6,
-    height: 6,
-    marginLeft: 2,
-    borderRadius: 3,
-    borderWidth: 1.5,
-    borderColor: palette.text,
-  },
-  speakerSlash: {
-    width: 14,
-    height: 1.8,
-    marginLeft: -8,
-    backgroundColor: palette.danger,
-    transform: [{rotate: '-45deg'}],
-  },
+  iconDisabled: {opacity: state.disabledOpacity},
 
   map: {flex: 1, minHeight: 200},
   introOverlay: {position: 'absolute', top: 0, left: 0, right: 0, bottom: 0},
@@ -794,49 +838,41 @@ const styles = StyleSheet.create({
     right: 18,
     alignItems: 'flex-end',
   },
-  counterText: {color: palette.text, fontSize: 17, fontWeight: '700'},
+  counterText: {color: palette.text, fontSize: type.display, fontWeight: '700'},
   counterLabel: {
     color: palette.textMuted,
-    fontSize: 9,
+    fontSize: type.micro,
     fontWeight: '700',
-    letterSpacing: 1.4,
+    letterSpacing: tracking.caps,
   },
 
-  dock: {paddingHorizontal: 14, paddingTop: 10, maxHeight: '52%'},
+  dock: {paddingHorizontal: space.lg, paddingTop: space.md, maxHeight: '52%'},
   actionBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: palette.panel,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: palette.panelEdge,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.xl,
   },
   actionLabel: {
     color: palette.text,
-    fontSize: 15,
+    fontSize: type.title,
     fontWeight: '700',
-    letterSpacing: 2,
+    letterSpacing: tracking.capsWide,
   },
-  eye: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2.5,
-    borderColor: palette.safe,
-  },
-
   panel: {
     flexShrink: 1,
     minHeight: 0,
     backgroundColor: palette.panel,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: palette.panelEdge,
-    padding: 16,
-    gap: 10,
+    padding: space.lg,
+    gap: space.md,
   },
   panelHead: {
     flexDirection: 'row',
@@ -845,31 +881,31 @@ const styles = StyleSheet.create({
   },
   panelTitle: {
     color: palette.text,
-    fontSize: 14,
+    fontSize: type.body,
     fontWeight: '700',
-    letterSpacing: 2,
+    letterSpacing: tracking.capsWide,
   },
   panelTitleSignal: {
     color: palette.signal,
-    fontSize: 14,
+    fontSize: type.body,
     fontWeight: '700',
-    letterSpacing: 2,
+    letterSpacing: tracking.capsWide,
   },
   panelAction: {
     color: palette.textMuted,
-    fontSize: 12,
+    fontSize: type.label,
     fontWeight: '700',
-    letterSpacing: 1.2,
+    letterSpacing: tracking.caps,
   },
-  cause: {color: palette.text, fontSize: 16, lineHeight: 22, fontWeight: '600'},
-  subCause: {color: palette.textMuted, fontSize: 13, lineHeight: 19},
+  cause: {color: palette.text, fontSize: type.title, lineHeight: 22, fontWeight: '600'},
+  subCause: {color: palette.textMuted, fontSize: type.body, lineHeight: 19},
 
   panelBody: {flexShrink: 1},
-  panelBodyContent: {gap: 10, paddingBottom: 4},
-  timeline: {gap: 6, paddingTop: 4},
+  panelBodyContent: {gap: space.md, paddingBottom: space.xs},
+  timeline: {gap: space.sm, paddingTop: space.xs},
   track: {
     height: 3,
-    borderRadius: 2,
+    borderRadius: radius.sm,
     backgroundColor: palette.panelEdge,
     justifyContent: 'center',
   },
@@ -878,115 +914,96 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 3,
-    borderRadius: 2,
+    borderRadius: radius.sm,
     backgroundColor: palette.panelEdge,
   },
+  // Centred on its tick. The dot this replaces was 9 px wide with a -4 margin
+  // and a radius of 5, so it sat half a pixel off its own mark in both axes.
   marker: {
     position: 'absolute',
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    marginLeft: -4,
-    backgroundColor: palette.textMuted,
+    width: MARKER_SIZE,
+    height: MARKER_SIZE,
+    marginLeft: -MARKER_SIZE / 2,
   },
-  markerFailure: {backgroundColor: palette.danger},
-  trackLabels: {flexDirection: 'row', flexWrap: 'wrap', gap: 12},
-  trackTime: {color: palette.textMuted, fontSize: 11},
-  trackEvent: {color: palette.textMuted, fontSize: 11},
+  trackLabels: {flexDirection: 'row', flexWrap: 'wrap', gap: space.md},
+  trackTime: {color: palette.textMuted, fontSize: type.label},
+  trackEvent: {color: palette.textMuted, fontSize: type.label},
 
-  row: {flexDirection: 'row', gap: 10, alignItems: 'center'},
+  row: {flexDirection: 'row', gap: space.md, alignItems: 'center'},
   grow: {flex: 1},
   primary: {
     backgroundColor: palette.signal,
-    borderRadius: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
+    borderRadius: radius.md,
+    paddingVertical: space.lg,
+    paddingHorizontal: space.xl,
     alignItems: 'center',
     minHeight: 44,
     justifyContent: 'center',
   },
   primaryLabel: {
     color: palette.shell,
-    fontSize: 14,
+    fontSize: type.body,
     fontWeight: '800',
-    letterSpacing: 1.4,
+    letterSpacing: tracking.caps,
   },
   secondary: {
-    borderRadius: 8,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: palette.panelEdge,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: space.lg,
+    paddingHorizontal: space.lg,
     minHeight: 44,
     justifyContent: 'center',
   },
   secondaryLabel: {
     color: palette.text,
-    fontSize: 13,
+    fontSize: type.body,
     fontWeight: '700',
-    letterSpacing: 1.2,
+    letterSpacing: tracking.caps,
   },
-  disabled: {opacity: 0.35},
+  disabled: {opacity: state.disabledOpacity},
 
-  tray: {flexDirection: 'row', alignItems: 'center', gap: 8},
+  tray: {flexDirection: 'row', alignItems: 'center', gap: space.sm},
   trayChip: {
     width: 30,
     height: 30,
-    borderRadius: 6,
+    borderRadius: radius.md,
     borderWidth: 1.5,
     borderColor: palette.signal,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  trayArrow: {
-    width: 0,
-    height: 0,
-    borderTopWidth: 6,
-    borderBottomWidth: 6,
-    borderLeftWidth: 10,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderLeftColor: palette.signal,
-  },
-  trayCount: {color: palette.signal, fontSize: 15, fontWeight: '700'},
+  trayCount: {color: palette.signal, fontSize: type.title, fontWeight: '700'},
 
   outTitle: {
     color: palette.safe,
-    fontSize: 16,
+    fontSize: type.title,
     fontWeight: '800',
-    letterSpacing: 1.8,
+    letterSpacing: tracking.capsWide,
   },
   nextButton: {
-    borderRadius: 8,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: palette.safeDeep,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingVertical: space.md,
+    paddingHorizontal: space.lg,
     minHeight: 40,
     justifyContent: 'center',
   },
   nextLabel: {
     color: palette.safe,
-    fontSize: 12,
+    fontSize: type.label,
     fontWeight: '700',
-    letterSpacing: 1.2,
+    letterSpacing: tracking.caps,
   },
-  marks: {flexDirection: 'row', gap: 18, alignItems: 'flex-start'},
-  mark: {gap: 3},
-  markDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    borderWidth: 1.5,
-    borderColor: palette.textMuted,
-  },
-  markDotEarned: {backgroundColor: palette.safe, borderColor: palette.safe},
+  marks: {flexDirection: 'row', gap: space.xl, alignItems: 'flex-start'},
+  mark: {gap: space.xs},
   markLabel: {
     color: palette.textMuted,
-    fontSize: 11,
+    fontSize: type.label,
     fontWeight: '700',
-    letterSpacing: 1,
+    letterSpacing: tracking.caps,
   },
   markLabelEarned: {color: palette.text},
-  markDetail: {color: palette.textMuted, fontSize: 10},
+  markDetail: {color: palette.textMuted, fontSize: type.micro},
 });

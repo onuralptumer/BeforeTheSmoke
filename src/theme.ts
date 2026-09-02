@@ -34,8 +34,17 @@ export const palette = {
   safe: '#3FD9AE',
   safeDeep: '#1E6A57',
 
-  /** Hazard volume. */
-  smoke: '#9AA3AB',
+  /**
+   * Hazard volume.
+   *
+   * Darkened from #9AA3AB, which measured 1.42:1 against `floor` — so close in
+   * value that no amount of opacity could make a smoke cell read as a mass on
+   * the plan. Four ticks in one of these incapacitates somebody, and it looked
+   * like a smudge. #5F676F measures 3.19:1 on the same ground at full strength,
+   * which leaves enough headroom for the mass to read as a region while still
+   * being painted below full opacity.
+   */
+  smoke: '#5F676F',
 
   /** The failure and the decision that caused it. Sparing. */
   danger: '#E04B39',
@@ -44,7 +53,13 @@ export const palette = {
   routeHistory: '#D8DCE0',
 
   text: '#E8EBED',
-  textMuted: '#7C848C',
+  /**
+   * Secondary text. Lifted from #7C848C, which measured 4.37:1 on `panel` and
+   * failed AA for small text — and this is the colour every 10 and 11 px label
+   * in the interface is set in, so it was failing at its worst case. #98A0A8
+   * measures 6.26:1 on the same ground.
+   */
+  textMuted: '#98A0A8',
 } as const;
 
 export const motion = {
@@ -54,12 +69,98 @@ export const motion = {
   stepMs: 220,
   socketPulseMs: 1600,
   panelMs: 220,
+  /** Firm magnetic placement. The one place elastic motion is allowed. */
+  socketSnapMs: 140,
+  /** Mechanical notch, not a spin. */
+  rotateNotchMs: 120,
 } as const;
+
+/**
+ * The socket pulse expressed in simulation ticks.
+ *
+ * While a run plays there is already a playhead re-rendering every frame, so
+ * the pulse is derived from it rather than from a second timer; that means the
+ * period has to be stated in the playhead's units.
+ */
+export const pulseTicks = motion.socketPulseMs / motion.tickMs;
 
 export const layout = {
   cols: 13,
   rows: 20,
   minCell: 14,
+} as const;
+
+/**
+ * Semantic colour roles.
+ *
+ * `palette` names what a colour *is*; this names what it is *for*. Components
+ * should reach for these, so that changing the value of "secondary text"
+ * happens once rather than at every call site — which is how `textMuted` came
+ * to be failing contrast at fifteen places at once.
+ */
+export const semantic = {
+  surface: palette.panel,
+  surfaceRaised: palette.panelEdge,
+  border: palette.panelEdge,
+  textPrimary: palette.text,
+  textSecondary: palette.textMuted,
+  /** The player's one intervention. */
+  accent: palette.signal,
+  /** Sits on `accent`, so it is the dark shell rather than the light text. */
+  onAccent: palette.shell,
+  positive: palette.safe,
+  negative: palette.danger,
+} as const;
+
+/**
+ * Derived interaction states, so a disabled control is never hand-tuned. These
+ * were 0.35 in one component and 0.3 in another for the same meaning.
+ */
+export const state = {
+  disabledOpacity: 0.35,
+  pressedOpacity: 0.7,
+} as const;
+
+/**
+ * Type scale: five steps, and two tracking values for uppercase.
+ *
+ * Replaces nine ad-hoc font sizes (9 through 17) and nine letter-spacings.
+ * design.md §9 deliberately specifies no scale — it is concerned with the
+ * family, not the ramp — so this fills the gap without contradicting it.
+ */
+export const type = {
+  /** Unit labels under a readout. */
+  micro: 10,
+  /** Uppercase labels and the event strip. */
+  label: 11,
+  /** Sentence-case body copy. */
+  body: 13,
+  /** Panel titles, the clock, an incident name. */
+  title: 15,
+  /** The safe counter, and the one word that ends a run. */
+  display: 17,
+} as const;
+
+export const tracking = {
+  /** Ordinary uppercase labels. */
+  caps: 1.6,
+  /** Large or sparse uppercase, where the extra air is the point. */
+  capsWide: 2.4,
+} as const;
+
+/** 4 pt base. Nothing in the interface is spaced off this ramp. */
+export const space = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+} as const;
+
+/** Two radii. Small for chips and bars, medium for panels and buttons. */
+export const radius = {
+  sm: 4,
+  md: 8,
 } as const;
 
 /** Stable digit width for the clock, without bundling a font. */

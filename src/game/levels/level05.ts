@@ -59,6 +59,11 @@ export const level05: LevelDefinition = {
     },
   ],
   events: [
+    // The south-west spur, which no route in this level uses. It is the largest
+    // mass in the first half of the game and it costs nothing: smoke filling a
+    // part of the building the evacuation never goes near.
+    {tick: 2, type: 'ADD_SMOKE', cells: [at(3, 18), at(0, 19), at(1, 19), at(2, 19), at(3, 19)]},
+    {tick: 6, type: 'ADD_SMOKE', cells: [at(3, 17), at(3, 16)]},
     {tick: 6, type: 'CLOSE_DOOR', cell: at(3, 16)},
     {tick: 12, type: 'CLOSE_DOOR', cell: at(2, 13)},
   ],

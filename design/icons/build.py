@@ -1,9 +1,17 @@
 import json, os, html
 
-data = json.load(open('/home/claude/icons/icons.json'))
+# Paths resolve from this file, so the generator runs wherever the repo is
+# checked out. It previously pointed at /home/claude and /mnt/user-data, which
+# only existed on the machine the icons were authored on — meaning icons.json
+# could not actually be regenerated, and src/components/icons.ts was a
+# generated file nobody could regenerate.
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.abspath(os.path.join(HERE, '..', '..'))
+
+data = json.load(open(os.path.join(HERE, 'icons.json')))
 ICONS = data['icons']
-OUT = '/mnt/user-data/outputs'
-os.makedirs(f'{OUT}/icons', exist_ok=True)
+OUT = HERE
+TS_OUT = os.path.join(REPO, 'src', 'components', 'icons.ts')
 
 # ---------------------------------------------------------------- icons.ts
 lines = ['''/**
@@ -54,9 +62,29 @@ export const markIcon = (
   earned: boolean,
 ): IconName =>
   (earned ? `mark-${mark}` : `mark-${mark}-outline`) as IconName;
+
+/**
+ * The four kinds record.ts emits onto the timeline. The union is repeated here
+ * rather than imported so this file stays free of game imports; TimelineEvent
+ * in src/game/replay/record.ts is the definition it must match.
+ */
+export const eventIcon = (
+  kind: 'DOOR' | 'SMOKE' | 'BLOCK' | 'FAILURE',
+): IconName => {
+  switch (kind) {
+    case 'DOOR':
+      return 'event-door';
+    case 'SMOKE':
+      return 'event-smoke';
+    case 'BLOCK':
+      return 'event-block';
+    case 'FAILURE':
+      return 'event-failure';
+  }
+};
 ''')
 
-open(f'{OUT}/icons/icons.ts', 'w').write('\n'.join(lines))
+open(TS_OUT, 'w').write('\n'.join(lines))
 
 # ------------------------------------------------------- contact sheet HTML
 def svg_markup(icon, color, sw=1.5):
@@ -169,5 +197,5 @@ doc = f'''<!doctype html>
 
 {''.join(sections)}
 '''
-open(f'{OUT}/icon-contact-sheet.html', 'w').write(doc)
-print('wrote icons.ts and icon-contact-sheet.html')
+open(os.path.join(OUT, 'contact-sheet.html'), 'w').write(doc)
+print('wrote src/components/icons.ts and design/icons/contact-sheet.html')

@@ -50,7 +50,15 @@ export const level02: LevelDefinition = {
       anchorCell: at(6, 13),
     },
   ],
-  events: [{tick: 11, type: 'CLOSE_DOOR', cell: at(4, 12)}],
+  events: [
+    // Both waiting areas, filling behind the group as it strings out into the
+    // corridor. Atmosphere only: every cell is behind the queue by the tick it
+    // appears, and the level plays identically with it and without.
+    {tick: 4, type: 'ADD_SMOKE', cells: [at(8, 16)]},
+    {tick: 6, type: 'ADD_SMOKE', cells: [at(7, 16), at(5, 16), at(4, 16)]},
+    {tick: 8, type: 'ADD_SMOKE', cells: [at(6, 16), at(6, 15)]},
+    {tick: 11, type: 'CLOSE_DOOR', cell: at(4, 12)},
+  ],
   maxTicks: 45,
   parFinishTick: 16,
   maxWaitTicksForFlow: 6,

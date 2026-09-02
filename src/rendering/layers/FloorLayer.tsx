@@ -11,19 +11,36 @@
  */
 
 import React, {useMemo} from 'react';
+import {PixelRatio} from 'react-native';
 import {
   BlurMask,
   Group,
   Path,
+  RadialGradient,
   Rect,
   RoundedRect,
   Skia,
+  vec,
 } from '@shopify/react-native-skia';
 
 import {CellKey, LevelDefinition, Vec2, cellKey} from '../../game/types';
 import {WorldMap} from '../../game/engine/world';
 import {Viewport, cellOrigin} from '../geometry';
 import {palette} from '../../theme';
+
+/**
+ * Round a stroke width to a whole number of device pixels.
+ *
+ * Wall widths are derived from the cell size, so they land on fractions at most
+ * zoom levels. A fractional width straddles a pixel boundary and gets
+ * antialiased across two pixels by an amount that depends on the device's scale
+ * factor — which is why the same plan looks crisper on one phone than another.
+ * Never rounds below one device pixel, or a hairline would disappear.
+ */
+function snapStroke(width: number): number {
+  const scale = PixelRatio.get();
+  return Math.max(1 / scale, Math.round(width * scale) / scale);
+}
 
 interface Props {
   level: LevelDefinition;
@@ -232,21 +249,46 @@ function FloorLayerImpl({level, map, viewport, closedDoors}: Props) {
       </Path>
 
       <Path path={floorPath} color={palette.floor} />
+
+      {/* The floor was one flat fill, which is what makes a large light area
+          read as vector clipart rather than as a lit surface. A wide radial
+          falloff, centred on the plan and clipped to it, gives it somewhere to
+          be lit from. Kept very shallow: this is a plan, not a spotlight. */}
+      <Group clip={floorPath}>
+        <Rect
+          x={viewport.frameX}
+          y={viewport.frameY}
+          width={viewport.width}
+          height={viewport.height}>
+          <RadialGradient
+            c={vec(
+              viewport.frameX + viewport.width / 2,
+              viewport.frameY + viewport.height / 2,
+            )}
+            r={Math.max(viewport.width, viewport.height) * 0.75}
+            colors={['#00000000', '#00000026']}
+          />
+        </Rect>
+      </Group>
+
       {/* Two lines make the boundary read: a heavy dark one centred on the
           edge, and a thin light trim just inside it. Without the trim the wall
-          is dark-on-dark against the ground and the plan loses its outline. */}
+          is dark-on-dark against the ground and the plan loses its outline.
+          Both widths are snapped to whole device pixels — `c * 0.22` lands on a
+          fraction at most cell sizes, which puts the line between two physical
+          pixels and blurs it by a different amount on every device. */}
       <Path
         path={wallPath}
         color={palette.wall}
         style="stroke"
-        strokeWidth={Math.max(2, c * 0.22)}
+        strokeWidth={snapStroke(Math.max(2, c * 0.22))}
         strokeCap="square"
       />
       <Path
         path={wallPath}
         color={palette.wallInner}
         style="stroke"
-        strokeWidth={Math.max(1, c * 0.07)}
+        strokeWidth={snapStroke(Math.max(1, c * 0.07))}
         strokeCap="square"
         opacity={0.9}
       />

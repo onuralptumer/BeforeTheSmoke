@@ -60,7 +60,14 @@ export const level09: LevelDefinition = {
       anchorCell: at(9, 13),
     },
   ],
-  events: [{tick: 12, type: 'CLOSE_DOOR', cell: at(9, 10)}],
+  events: [
+    // The western stub and the corridor behind the group. Atmosphere only —
+    // the lesson here is the Follower chain, and smoke must not confound it.
+    {tick: 4, type: 'ADD_SMOKE', cells: [at(1, 14), at(2, 14), at(3, 14)]},
+    {tick: 8, type: 'ADD_SMOKE', cells: [at(4, 14), at(4, 15), at(4, 16)]},
+    {tick: 10, type: 'ADD_SMOKE', cells: [at(5, 16), at(6, 16)]},
+    {tick: 12, type: 'CLOSE_DOOR', cell: at(9, 10)},
+  ],
   maxTicks: 50,
   parFinishTick: 22,
   maxWaitTicksForFlow: 4,

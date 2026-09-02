@@ -19,8 +19,12 @@ interface Props {
   viewport: Viewport;
   /** The junction the level authors as responsible. */
   criticalCell: Vec2 | null;
-  /** Where each person was lost. */
-  lostCells: Vec2[];
+  /**
+   * Where each person was lost, identified by who they were rather than by
+   * where they ended up. Two people can share a cell in the final frame, so
+   * position is not a usable identity here.
+   */
+  lostMarks: Array<{id: string; cell: Vec2}>;
   /** Of those, the ones who failed without moving. */
   stallCells: Vec2[];
   phase: number;
@@ -135,7 +139,7 @@ function LostMark({
 function OverlayLayerImpl({
   viewport,
   criticalCell,
-  lostCells,
+  lostMarks,
   stallCells,
   phase,
 }: Props) {
@@ -162,9 +166,9 @@ function OverlayLayerImpl({
         );
       })}
 
-      {lostCells.map(cell => (
+      {lostMarks.map(({id, cell}) => (
         <LostMark
-          key={`lost${cell.x},${cell.y}`}
+          key={`lost-${id}`}
           centre={cellCentre(viewport, cell)}
           cell={c}
         />

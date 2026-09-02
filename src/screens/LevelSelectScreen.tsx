@@ -22,7 +22,7 @@ import {WorldMap} from '../game/engine/world';
 import {LEVELS} from '../game/levels';
 import {LevelProgress, ProgressMap} from '../storage/progress';
 import {contentBounds} from '../rendering/geometry';
-import {palette} from '../theme';
+import {palette, radius, space, tracking, type} from '../theme';
 
 const THUMB_W = 84;
 const THUMB_H = 108;
@@ -230,49 +230,49 @@ function MarkChip({label, earned}: {label: string; earned: boolean}) {
 
 const styles = StyleSheet.create({
   root: {flex: 1, backgroundColor: palette.shell},
-  thumb: {width: THUMB_W, height: THUMB_H, borderRadius: 6},
-  header: {paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18, gap: 7},
+  thumb: {width: THUMB_W, height: THUMB_H, borderRadius: radius.md},
+  header: {paddingHorizontal: space.xl, paddingTop: space.lg, paddingBottom: space.xl, gap: space.sm},
   kicker: {
     color: palette.text,
-    fontSize: 13,
+    fontSize: type.body,
     fontWeight: '800',
-    letterSpacing: 2.4,
+    letterSpacing: tracking.capsWide,
   },
-  blurb: {color: palette.textMuted, fontSize: 14, lineHeight: 20},
-  list: {paddingHorizontal: 14, gap: 12},
+  blurb: {color: palette.textMuted, fontSize: type.body, lineHeight: 20},
+  list: {paddingHorizontal: space.lg, gap: space.md},
   card: {
     flexDirection: 'row',
-    gap: 14,
-    padding: 12,
-    borderRadius: 12,
+    gap: space.lg,
+    padding: space.md,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: palette.panelEdge,
     backgroundColor: palette.panel,
   },
   cardLocked: {opacity: 0.5},
-  cardBody: {flex: 1, gap: 3},
+  cardBody: {flex: 1, gap: space.xs},
   cardIndex: {
     color: palette.textMuted,
-    fontSize: 10,
+    fontSize: type.micro,
     fontWeight: '800',
-    letterSpacing: 1.6,
+    letterSpacing: tracking.caps,
   },
-  cardTitle: {color: palette.text, fontSize: 17, fontWeight: '700'},
-  cardTeaches: {color: palette.textMuted, fontSize: 13, lineHeight: 18},
-  markRow: {flexDirection: 'row', gap: 6, marginTop: 8},
+  cardTitle: {color: palette.text, fontSize: type.display, fontWeight: '700'},
+  cardTeaches: {color: palette.textMuted, fontSize: type.body, lineHeight: 18},
+  markRow: {flexDirection: 'row', gap: space.sm, marginTop: 8},
   chip: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
+    paddingHorizontal: space.sm,
+    paddingVertical: space.xs,
+    borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: palette.panelEdge,
   },
   chipEarned: {backgroundColor: palette.safeDeep, borderColor: palette.safe},
   chipText: {
     color: palette.textMuted,
-    fontSize: 9,
+    fontSize: type.micro,
     fontWeight: '800',
-    letterSpacing: 0.8,
+    letterSpacing: tracking.caps,
   },
   chipTextEarned: {color: palette.safe},
   stamp: {
@@ -281,15 +281,15 @@ const styles = StyleSheet.create({
     right: 10,
     borderWidth: 1.5,
     borderColor: palette.safe,
-    borderRadius: 3,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    borderRadius: radius.sm,
+    paddingHorizontal: space.sm,
+    paddingVertical: space.xs,
     transform: [{rotate: '-8deg'}],
   },
   stampText: {
     color: palette.safe,
-    fontSize: 9,
+    fontSize: type.micro,
     fontWeight: '800',
-    letterSpacing: 1.2,
+    letterSpacing: tracking.caps,
   },
 });

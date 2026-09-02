@@ -1,0 +1,679 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`level outcomes level-01 — Wrong Corridor failure texture 1`] = `
+{
+  "baseline": {
+    "failedAgentIds": [
+      "a1",
+    ],
+    "failureReason": "NO_AVAILABLE_ROUTE",
+    "saved": "0/1",
+    "totalExposure": 0,
+  },
+  "losingRuns": {
+    "sock-j1->e_j1_e1": {
+      "failedAgentIds": [
+        "a1",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "0/1",
+      "totalExposure": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-01 — Wrong Corridor verdict is unchanged 1`] = `
+{
+  "baselineSucceeds": false,
+  "problems": [],
+  "solutions": [
+    "sock-j1->e_j1_e2",
+  ],
+  "verdicts": {
+    "sock-j1->e_j1_e1": "FAILS",
+    "sock-j1->e_j1_e2": "SAFE",
+  },
+  "winningRuns": {
+    "sock-j1->e_j1_e2": {
+      "finishTick": 10,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": true,
+      },
+      "saved": "1/1",
+      "totalWaitTicks": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-02 — One Arrow, Five People failure texture 1`] = `
+{
+  "baseline": {
+    "failedAgentIds": [
+      "a3",
+      "b2",
+    ],
+    "failureReason": "NO_AVAILABLE_ROUTE",
+    "saved": "3/5",
+    "totalExposure": 0,
+  },
+  "losingRuns": {
+    "sock-j1->e_j1_e1": {
+      "failedAgentIds": [
+        "a3",
+        "b2",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "3/5",
+      "totalExposure": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-02 — One Arrow, Five People verdict is unchanged 1`] = `
+{
+  "baselineSucceeds": false,
+  "problems": [],
+  "solutions": [
+    "sock-j1->e_j1_e2",
+  ],
+  "verdicts": {
+    "sock-j1->e_j1_e1": "FAILS",
+    "sock-j1->e_j1_e2": "SAFE",
+  },
+  "winningRuns": {
+    "sock-j1->e_j1_e2": {
+      "finishTick": 16,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": true,
+      },
+      "saved": "5/5",
+      "totalWaitTicks": 2,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-03 — Too Late failure texture 1`] = `
+{
+  "baseline": {
+    "failedAgentIds": [
+      "a2",
+      "a3",
+    ],
+    "failureReason": "NO_AVAILABLE_ROUTE",
+    "saved": "1/3",
+    "totalExposure": 0,
+  },
+  "losingRuns": {
+    "sock-j1->e_j1_j2": {
+      "failedAgentIds": [
+        "a2",
+        "a3",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "1/3",
+      "totalExposure": 0,
+    },
+    "sock-j2->e_j2_b1": {
+      "failedAgentIds": [
+        "a1",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "0/3",
+      "totalExposure": 0,
+    },
+    "sock-j2->e_j2_e1": {
+      "failedAgentIds": [
+        "a2",
+        "a3",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "1/3",
+      "totalExposure": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-03 — Too Late verdict is unchanged 1`] = `
+{
+  "baselineSucceeds": false,
+  "problems": [],
+  "solutions": [
+    "sock-j1->e_j1_e2",
+  ],
+  "verdicts": {
+    "sock-j1->e_j1_e2": "SAFE",
+    "sock-j1->e_j1_j2": "FAILS",
+    "sock-j2->e_j2_b1": "FAILS",
+    "sock-j2->e_j2_e1": "FAILS",
+  },
+  "winningRuns": {
+    "sock-j1->e_j1_e2": {
+      "finishTick": 14,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": true,
+      },
+      "saved": "3/3",
+      "totalWaitTicks": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-04 — Safe for Now failure texture 1`] = `
+{
+  "baseline": {
+    "failedAgentIds": [
+      "a3",
+    ],
+    "failureReason": "SMOKE_EXPOSURE",
+    "saved": "2/4",
+    "totalExposure": 8,
+  },
+  "losingRuns": {
+    "sock-j1->e_j1_j2": {
+      "failedAgentIds": [
+        "a3",
+        "a4",
+      ],
+      "failureReason": "SMOKE_EXPOSURE",
+      "saved": "2/4",
+      "totalExposure": 12,
+    },
+    "sock-j2->e_j2_e1": {
+      "failedAgentIds": [
+        "a3",
+      ],
+      "failureReason": "SMOKE_EXPOSURE",
+      "saved": "2/4",
+      "totalExposure": 8,
+    },
+    "sock-j2->e_j2_e3": {
+      "failedAgentIds": [
+        "a3",
+      ],
+      "failureReason": "SMOKE_EXPOSURE",
+      "saved": "2/4",
+      "totalExposure": 7,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-04 — Safe for Now verdict is unchanged 1`] = `
+{
+  "baselineSucceeds": false,
+  "problems": [],
+  "solutions": [
+    "sock-j1->e_j1_e2",
+  ],
+  "verdicts": {
+    "sock-j1->e_j1_e2": "SAFE",
+    "sock-j1->e_j1_j2": "FAILS",
+    "sock-j2->e_j2_e1": "FAILS",
+    "sock-j2->e_j2_e3": "FAILS",
+  },
+  "winningRuns": {
+    "sock-j1->e_j1_e2": {
+      "finishTick": 18,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": true,
+      },
+      "saved": "4/4",
+      "totalWaitTicks": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-05 — Turn the Leader failure texture 1`] = `
+{
+  "baseline": {
+    "failedAgentIds": [
+      "f2",
+      "f3",
+      "f4",
+    ],
+    "failureReason": "NO_AVAILABLE_ROUTE",
+    "saved": "2/7",
+    "totalExposure": 0,
+  },
+  "losingRuns": {
+    "sock-j1->e_j1_j2": {
+      "failedAgentIds": [
+        "f2",
+        "f3",
+        "f4",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "2/7",
+      "totalExposure": 0,
+    },
+    "sock-j2->e_j2_e1": {
+      "failedAgentIds": [
+        "f2",
+        "f3",
+        "f4",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "2/7",
+      "totalExposure": 0,
+    },
+    "sock-j2->e_j2_e3": {
+      "failedAgentIds": [
+        "f2",
+        "f3",
+        "f4",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "2/7",
+      "totalExposure": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-05 — Turn the Leader verdict is unchanged 1`] = `
+{
+  "baselineSucceeds": false,
+  "problems": [],
+  "solutions": [
+    "sock-j1->e_j1_e2",
+  ],
+  "verdicts": {
+    "sock-j1->e_j1_e2": "SAFE",
+    "sock-j1->e_j1_j2": "FAILS",
+    "sock-j2->e_j2_e1": "FAILS",
+    "sock-j2->e_j2_e3": "FAILS",
+  },
+  "winningRuns": {
+    "sock-j1->e_j1_e2": {
+      "finishTick": 23,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": true,
+      },
+      "saved": "7/7",
+      "totalWaitTicks": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-06 — Bottleneck failure texture 1`] = `
+{
+  "baseline": {
+    "failedAgentIds": [
+      "b2",
+    ],
+    "failureReason": "SMOKE_EXPOSURE",
+    "saved": "1/8",
+    "totalExposure": 12,
+  },
+  "losingRuns": {
+    "sock-ja->e_ja_m1": {
+      "failedAgentIds": [
+        "b2",
+      ],
+      "failureReason": "SMOKE_EXPOSURE",
+      "saved": "1/8",
+      "totalExposure": 14,
+    },
+    "sock-jb->e_jb_m1": {
+      "failedAgentIds": [
+        "b2",
+      ],
+      "failureReason": "SMOKE_EXPOSURE",
+      "saved": "1/8",
+      "totalExposure": 14,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-06 — Bottleneck verdict is unchanged 1`] = `
+{
+  "baselineSucceeds": false,
+  "problems": [],
+  "solutions": [
+    "sock-ja->e_ja_e2",
+    "sock-jb->e_jb_e3",
+  ],
+  "verdicts": {
+    "sock-ja->e_ja_e2": "SAFE",
+    "sock-ja->e_ja_m1": "FAILS",
+    "sock-jb->e_jb_e3": "SAFE",
+    "sock-jb->e_jb_m1": "FAILS",
+  },
+  "winningRuns": {
+    "sock-ja->e_ja_e2": {
+      "finishTick": 20,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": true,
+      },
+      "saved": "8/8",
+      "totalWaitTicks": 0,
+    },
+    "sock-jb->e_jb_e3": {
+      "finishTick": 20,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": true,
+      },
+      "saved": "8/8",
+      "totalWaitTicks": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-07 — Opposing Flow failure texture 1`] = `
+{
+  "baseline": {
+    "failedAgentIds": [
+      "a3",
+      "a4",
+    ],
+    "failureReason": "COUNTERFLOW_DEADLOCK",
+    "saved": "2/4",
+    "totalExposure": 0,
+  },
+  "losingRuns": {
+    "sock-jw->e_jw_jx": {
+      "failedAgentIds": [
+        "a3",
+        "a4",
+      ],
+      "failureReason": "COUNTERFLOW_DEADLOCK",
+      "saved": "2/4",
+      "totalExposure": 0,
+    },
+    "sock-jx->e_jx_ew": {
+      "failedAgentIds": [
+        "a3",
+        "a4",
+      ],
+      "failureReason": "COUNTERFLOW_DEADLOCK",
+      "saved": "2/4",
+      "totalExposure": 0,
+    },
+    "sock-jx->e_jx_jw": {
+      "failedAgentIds": [
+        "a1",
+        "a2",
+        "a3",
+        "a4",
+      ],
+      "failureReason": "COUNTERFLOW_DEADLOCK",
+      "saved": "0/4",
+      "totalExposure": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-07 — Opposing Flow verdict is unchanged 1`] = `
+{
+  "baselineSucceeds": false,
+  "problems": [],
+  "solutions": [
+    "sock-jw->e_jw_je",
+  ],
+  "verdicts": {
+    "sock-jw->e_jw_je": "SAFE",
+    "sock-jw->e_jw_jx": "FAILS",
+    "sock-jx->e_jx_ew": "FAILS",
+    "sock-jx->e_jx_jw": "FAILS",
+  },
+  "winningRuns": {
+    "sock-jw->e_jw_je": {
+      "finishTick": 18,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": true,
+      },
+      "saved": "4/4",
+      "totalWaitTicks": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-08 — The Last Person failure texture 1`] = `
+{
+  "baseline": {
+    "failedAgentIds": [
+      "slow",
+    ],
+    "failureReason": "SMOKE_EXPOSURE",
+    "saved": "4/5",
+    "totalExposure": 4,
+  },
+  "losingRuns": {
+    "sock-j1->e_j1_j2": {
+      "failedAgentIds": [
+        "slow",
+      ],
+      "failureReason": "SMOKE_EXPOSURE",
+      "saved": "4/5",
+      "totalExposure": 4,
+    },
+    "sock-j2->e_j2_e1": {
+      "failedAgentIds": [
+        "slow",
+      ],
+      "failureReason": "SMOKE_EXPOSURE",
+      "saved": "4/5",
+      "totalExposure": 4,
+    },
+    "sock-j2->e_j2_e4": {
+      "failedAgentIds": [
+        "slow",
+      ],
+      "failureReason": "SMOKE_EXPOSURE",
+      "saved": "4/5",
+      "totalExposure": 4,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-08 — The Last Person verdict is unchanged 1`] = `
+{
+  "baselineSucceeds": false,
+  "problems": [],
+  "solutions": [
+    "sock-j1->e_j1_e2",
+  ],
+  "verdicts": {
+    "sock-j1->e_j1_e2": "SAFE",
+    "sock-j1->e_j1_j2": "FAILS",
+    "sock-j2->e_j2_e1": "FAILS",
+    "sock-j2->e_j2_e4": "FAILS",
+  },
+  "winningRuns": {
+    "sock-j1->e_j1_e2": {
+      "finishTick": 26,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": true,
+      },
+      "saved": "5/5",
+      "totalWaitTicks": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-09 — The Unseen Effect failure texture 1`] = `
+{
+  "baseline": {
+    "failedAgentIds": [
+      "f1",
+      "leader",
+    ],
+    "failureReason": "NO_AVAILABLE_ROUTE",
+    "saved": "0/6",
+    "totalExposure": 0,
+  },
+  "losingRuns": {
+    "sock-j1->e_j1_e1": {
+      "failedAgentIds": [
+        "f1",
+        "leader",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "0/6",
+      "totalExposure": 0,
+    },
+    "sock-j2->e_j2_e1": {
+      "failedAgentIds": [
+        "f1",
+        "leader",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "0/6",
+      "totalExposure": 0,
+    },
+    "sock-j2->e_j2_e2": {
+      "failedAgentIds": [
+        "leader",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "0/6",
+      "totalExposure": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-09 — The Unseen Effect verdict is unchanged 1`] = `
+{
+  "baselineSucceeds": false,
+  "problems": [],
+  "solutions": [
+    "sock-j1->e_j1_e2",
+  ],
+  "verdicts": {
+    "sock-j1->e_j1_e1": "FAILS",
+    "sock-j1->e_j1_e2": "SAFE",
+    "sock-j2->e_j2_e1": "FAILS",
+    "sock-j2->e_j2_e2": "FAILS",
+  },
+  "winningRuns": {
+    "sock-j1->e_j1_e2": {
+      "finishTick": 22,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": true,
+      },
+      "saved": "6/6",
+      "totalWaitTicks": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-10 — Before the Smoke failure texture 1`] = `
+{
+  "baseline": {
+    "failedAgentIds": [
+      "f1",
+    ],
+    "failureReason": "SMOKE_EXPOSURE",
+    "saved": "2/9",
+    "totalExposure": 10,
+  },
+  "losingRuns": {
+    "sock-j1->e_j1_j3": {
+      "failedAgentIds": [
+        "f1",
+      ],
+      "failureReason": "SMOKE_EXPOSURE",
+      "saved": "2/9",
+      "totalExposure": 10,
+    },
+    "sock-j2->e_j2_e3": {
+      "failedAgentIds": [
+        "b3",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "2/9",
+      "totalExposure": 3,
+    },
+    "sock-j2->e_j2_j3": {
+      "failedAgentIds": [
+        "f1",
+      ],
+      "failureReason": "SMOKE_EXPOSURE",
+      "saved": "1/9",
+      "totalExposure": 12,
+    },
+    "sock-j3->e_j3_e1": {
+      "failedAgentIds": [
+        "f1",
+      ],
+      "failureReason": "SMOKE_EXPOSURE",
+      "saved": "2/9",
+      "totalExposure": 10,
+    },
+    "sock-j3->e_j3_e4": {
+      "failedAgentIds": [
+        "f1",
+      ],
+      "failureReason": "SMOKE_EXPOSURE",
+      "saved": "1/9",
+      "totalExposure": 10,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-10 — Before the Smoke verdict is unchanged 1`] = `
+{
+  "baselineSucceeds": false,
+  "problems": [],
+  "solutions": [
+    "sock-j1->e_j1_e2",
+  ],
+  "verdicts": {
+    "sock-j1->e_j1_e2": "SAFE",
+    "sock-j1->e_j1_j3": "FAILS",
+    "sock-j2->e_j2_e3": "FAILS",
+    "sock-j2->e_j2_j3": "FAILS",
+    "sock-j3->e_j3_e1": "FAILS",
+    "sock-j3->e_j3_e4": "FAILS",
+  },
+  "winningRuns": {
+    "sock-j1->e_j1_e2": {
+      "finishTick": 26,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": true,
+      },
+      "saved": "9/9",
+      "totalWaitTicks": 20,
+    },
+  },
+}
+`;

@@ -57,6 +57,10 @@ export const level03: LevelDefinition = {
     },
   ],
   events: [
+    // The approach behind the group, and the deep junction they are walking
+    // towards. Atmosphere only — verified to leave every outcome unchanged.
+    {tick: 6, type: 'ADD_SMOKE', cells: [at(6, 18), at(6, 17), at(3, 13)]},
+    {tick: 8, type: 'ADD_SMOKE', cells: [at(6, 16), at(5, 16), at(6, 15)]},
     {tick: 7, type: 'BLOCK_EDGE', edgeId: eJ2B1.id},
     {tick: 8, type: 'CLOSE_DOOR', cell: at(6, 11)},
   ],

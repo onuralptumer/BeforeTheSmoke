@@ -60,10 +60,29 @@ export const level04: LevelDefinition = {
     // The escape beside the short corridor closes before the group reaches it.
     {tick: 8, type: 'CLOSE_DOOR', cell: at(3, 16)},
     // Off-screen smoke reaches the middle of the short corridor.
+    //
+    // Tick 10 is the earliest arrival that does not cost extra lives, found by
+    // sweeping every tick: 7 saves nobody, 8 and 9 save one, 10 saves two.
+    // Earlier smoke is more visible during the run but turns "Safe for Now"
+    // into a wipeout, which is not what the level teaches.
+    //
+    // It arrives as one mass turning the corner at J2: three cells of the
+    // approach the group has already walked, then the four cells of the
+    // corridor ahead of whoever is still in it. The approach cells are behind
+    // everyone by tick 10 and cost nothing — they are there so the hazard
+    // reads as a volume rolling in rather than four tiles switching on.
     {
       tick: 10,
       type: 'ADD_SMOKE',
-      cells: [at(2, 15), at(2, 14), at(2, 13), at(2, 12)],
+      cells: [
+        at(5, 15),
+        at(4, 15),
+        at(3, 15),
+        at(2, 15),
+        at(2, 14),
+        at(2, 13),
+        at(2, 12),
+      ],
     },
   ],
   maxTicks: 45,
@@ -72,4 +91,12 @@ export const level04: LevelDefinition = {
   criticalDecision: {junctionId: 'J1'},
   intendedSolutions: [{socketId: 'sock-j1', edgeId: eJ1E2.id}],
   temptingFailures: [{socketId: 'sock-j2', edgeId: eJ2E3.id}],
+  // A label is drawn from its cell rightwards, so it needs the corridor width
+  // to sit in: the one-cell stair takes an abbreviation, the wide run at row 15
+  // takes full names.
+  rooms: [
+    {label: 'St 2', cell: at(2, 13)},
+    {label: 'Corridor B', cell: at(4, 15)},
+    {label: 'Lobby', cell: at(7, 15)},
+  ],
 };

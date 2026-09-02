@@ -42,7 +42,16 @@ export const level01: LevelDefinition = {
       anchorCell: at(6, 13),
     },
   ],
-  events: [{tick: 7, type: 'CLOSE_DOOR', cell: at(3, 13)}],
+  events: [
+    // Smoke climbing the corridor behind them, out of the space they just
+    // left. It is why this person is walking, and it never reaches them: every
+    // cell is one they have already passed, or one beyond the door that shuts.
+    // Verified inert — the level plays identically with it and without.
+    {tick: 2, type: 'ADD_SMOKE', cells: [at(6, 17), at(6, 16)]},
+    {tick: 4, type: 'ADD_SMOKE', cells: [at(6, 15), at(6, 14)]},
+    {tick: 6, type: 'ADD_SMOKE', cells: [at(3, 13), at(3, 12)]},
+    {tick: 7, type: 'CLOSE_DOOR', cell: at(3, 13)},
+  ],
   maxTicks: 40,
   parFinishTick: 10,
   maxWaitTicksForFlow: 0,

@@ -76,7 +76,11 @@ export const level10: LevelDefinition = {
   events: [
     // The eastern route shuts before a half-speed person could finish it.
     {tick: 20, type: 'CLOSE_DOOR', cell: at(12, 13)},
-    // Smoke reaches the merge and the doorway while people are still queued.
+    // Smoke reaches the merge while people are still queued. This is the
+    // symptom the level is named for, and it is exactly three cells wide
+    // because the intended solution still routes group B across it: a fourth
+    // cell — the doorway at (6,12), or one more along either approach — spends
+    // their last tick of EXPOSURE_LIMIT and the level stops having a solution.
     {
       tick: 18,
       type: 'ADD_SMOKE',

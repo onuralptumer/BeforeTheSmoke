@@ -52,23 +52,43 @@ function facingFor(level: LevelDefinition, edgeId: string, from: Vec2) {
   return {dx: dx / len, dy: dy / len};
 }
 
+/**
+ * The signal dart: a tip, two swept-back wings, and a notch in the tail.
+ *
+ * This used to emit five points, four of which shared `baseX`/`baseY` and
+ * differed only by a perpendicular offset — so all four sat on one straight
+ * line and the notch rendered as a flat base. The dart had been a plain
+ * isoceles triangle since it was written.
+ *
+ * The notch is the point that fixes it: it sits forward of the wings, on the
+ * arrow's axis, which is what makes the tail concave. Proportions match the
+ * `signal-arrow` glyph in the icon set, so the arrow on the map and the arrow
+ * in the tray are the same shape.
+ */
 function arrowPath(
   centre: {x: number; y: number},
   facing: {dx: number; dy: number},
   size: number,
 ) {
   const path = Skia.Path.Make();
+  // Unit perpendicular to `facing`.
   const px = -facing.dy;
   const py = facing.dx;
-  const tipX = centre.x + facing.dx * size;
-  const tipY = centre.y + facing.dy * size;
-  const baseX = centre.x - facing.dx * size * 0.4;
-  const baseY = centre.y - facing.dy * size * 0.4;
-  path.moveTo(tipX, tipY);
-  path.lineTo(baseX + px * size * 0.66, baseY + py * size * 0.66);
-  path.lineTo(baseX + px * size * 0.26, baseY + py * size * 0.26);
-  path.lineTo(baseX - px * size * 0.26, baseY - py * size * 0.26);
-  path.lineTo(baseX - px * size * 0.66, baseY - py * size * 0.66);
+
+  const along = (d: number) => ({
+    x: centre.x + facing.dx * size * d,
+    y: centre.y + facing.dy * size * d,
+  });
+
+  const tip = along(1);
+  const tail = along(-0.4);
+  // Forward of the tail and on the axis — the concavity.
+  const notch = along(0);
+
+  path.moveTo(tip.x, tip.y);
+  path.lineTo(tail.x + px * size * 0.66, tail.y + py * size * 0.66);
+  path.lineTo(notch.x, notch.y);
+  path.lineTo(tail.x - px * size * 0.66, tail.y - py * size * 0.66);
   path.close();
   return path;
 }

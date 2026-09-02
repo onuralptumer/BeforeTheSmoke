@@ -12,7 +12,7 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import {palette} from '../theme';
+import {palette, radius, space, state, tracking, type} from '../theme';
 
 type Variant = 'primary' | 'secondary' | 'quiet';
 
@@ -55,15 +55,15 @@ export function Button({
 const styles = StyleSheet.create({
   base: {
     minHeight: 44,
-    paddingHorizontal: 18,
-    paddingVertical: 11,
-    borderRadius: 6,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.md,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pressed: {opacity: 0.7},
-  disabled: {opacity: 0.35},
-  label: {fontSize: 15, fontWeight: '600', letterSpacing: 0.4},
+  pressed: {opacity: state.pressedOpacity},
+  disabled: {opacity: state.disabledOpacity},
+  label: {fontSize: type.title, fontWeight: '600', letterSpacing: tracking.caps},
 });
 
 const variantStyle: Record<Variant, ViewStyle> = {
@@ -73,7 +73,7 @@ const variantStyle: Record<Variant, ViewStyle> = {
     borderWidth: 1,
     borderColor: palette.structure,
   },
-  quiet: {backgroundColor: 'transparent', paddingHorizontal: 10},
+  quiet: {backgroundColor: 'transparent', paddingHorizontal: space.md},
 };
 
 const labelStyle: Record<Variant, TextStyle> = {

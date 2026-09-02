@@ -13,6 +13,7 @@ import {RecordedRun} from '../game/replay/record';
 import {Viewport, lerpCentre} from './geometry';
 import {FloorLayer} from './layers/FloorLayer';
 import {HazardLayer} from './layers/HazardLayer';
+import {PlanFurnitureLayer} from './layers/PlanFurnitureLayer';
 import {OverlayLayer} from './layers/OverlayLayer';
 import {PeopleLayer, PersonView} from './layers/PeopleLayer';
 import {SignalLayer} from './layers/SignalLayer';
@@ -38,6 +39,9 @@ interface Props {
   dim: boolean;
   criticalCell: Vec2 | null;
   phase: number;
+  /** The full canvas, for placing the drawing furniture in the margins. */
+  canvasWidth: number;
+  canvasHeight: number;
 }
 
 export function GameCanvas({
@@ -56,7 +60,16 @@ export function GameCanvas({
   dim,
   criticalCell,
   phase,
+  canvasWidth,
+  canvasHeight,
 }: Props) {
+  // Smoke renders through two offscreen layers with blurs, which is the most
+  // expensive thing on this canvas, and its drift is a slow 1.6 s loop. So it
+  // gets a coarser clock than everything else: quantising the phase means the
+  // memoised layer re-renders about 24 times a second instead of 60, and the
+  // two-pixel difference in drift is not visible.
+  const smokePhase = Math.round(phase * 24) / 24;
+
   const index = Math.min(tickIndex, run.frames.length - 1);
   const frame = run.frames[index];
   const previous = run.frames[Math.max(0, index - 1)];
@@ -112,19 +125,37 @@ export function GameCanvas({
     }));
   }, [ghostRun, showTrails]);
 
-  const lostCells: Vec2[] = useMemo(() => {
+  // Paired with the agent id, not reduced to a bare cell: two people can end
+  // the run on the same cell, and keying a mark by position then collides.
+  const lostMarks = useMemo(() => {
     if (!showTrails) {
       return [];
     }
     return run.result.failedAgentIds
-      .map(id => frame.agents.find(a => a.id === id)?.cell ?? null)
-      .filter((c): c is Vec2 => c !== null);
+      .map(id => {
+        const cell = frame.agents.find(a => a.id === id)?.cell ?? null;
+        return cell ? {id, cell} : null;
+      })
+      .filter((m): m is {id: string; cell: Vec2} => m !== null);
   }, [showTrails, run, frame]);
 
-  const stallCells: Vec2[] = useMemo(
-    () => (showTrails ? run.stalls : []),
-    [showTrails, run],
-  );
+  // Deduplicated by cell. A stall ring describes a *place* where movement
+  // stopped, not a person, so two people stalled on one cell want one ring —
+  // and drawing two would collide on the cell-derived key.
+  const stallCells: Vec2[] = useMemo(() => {
+    if (!showTrails) {
+      return [];
+    }
+    const seen = new Set<string>();
+    return run.stalls.filter(cell => {
+      const key = `${cell.x},${cell.y}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }, [showTrails, run]);
 
   return (
     <Canvas style={styles.canvas}>
@@ -134,11 +165,26 @@ export function GameCanvas({
         viewport={viewport}
         closedDoors={frame.closedDoorCells}
       />
+      {/* The drawing furniture is part of the printed plan, so it sits on the
+          floor and under the hazard — smoke rolls over the room labels. */}
+      <PlanFurnitureLayer
+        level={level}
+        viewport={viewport}
+        canvasWidth={canvasWidth}
+        canvasHeight={canvasHeight}
+      />
+      {/* Smoke sits *under* the analysis wash, with the building.
+          Counter-intuitively this is what keeps it readable: the wash darkens
+          toward the shell colour, so dimming the floor and the smoke together
+          preserves the gap between them, whereas dimming only the floor drags
+          it down toward the un-dimmed mid-grey of the smoke and closes it.
+          Measured on level 6: smoke-under-wash 2.3:1, smoke-over-wash 1.5:1. */}
       <HazardLayer
         viewport={viewport}
         smokeCells={frame.smokeCells}
-        phase={phase}
+        phase={smokePhase}
       />
+
       {/* The wash sits above the building and below everything that explains
           it, so trails, marks and the signal stay at full strength. */}
       {dim && (
@@ -155,7 +201,7 @@ export function GameCanvas({
       <OverlayLayer
         viewport={viewport}
         criticalCell={criticalCell}
-        lostCells={lostCells}
+        lostMarks={lostMarks}
         stallCells={stallCells}
         phase={phase}
       />

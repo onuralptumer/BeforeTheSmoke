@@ -58,8 +58,22 @@ export const level08: LevelDefinition = {
   events: [
     // The side exit at J2 shuts long before the slow person reaches it.
     {tick: 14, type: 'CLOSE_DOOR', cell: at(3, 17)},
-    // Two cells of the short corridor. Survivable at full speed, not at half.
-    {tick: 16, type: 'ADD_SMOKE', cells: [at(3, 15), at(3, 14)]},
+    // The short corridor, and the approach the group reached it by. The two
+    // corridor cells are the mechanism — survivable at full speed, not at half,
+    // because a Slow person stands on each of them twice. The three approach
+    // cells are behind everyone by now and cost nothing; they are there so the
+    // two that matter read as the near edge of something larger.
+    //
+    // Tick 15 is the earliest this level tolerates, established by sweeping
+    // every tick against the verdict lock. Earlier and the smoke is on the
+    // approach while the Slow person is still on it, which either kills them on
+    // the route that is supposed to work or is perceived at J2 and reroutes
+    // them; the door at tick 14 has to shut first.
+    {
+      tick: 15,
+      type: 'ADD_SMOKE',
+      cells: [at(5, 16), at(4, 16), at(3, 16), at(3, 15), at(3, 14)],
+    },
   ],
   maxTicks: 50,
   parFinishTick: 26,
