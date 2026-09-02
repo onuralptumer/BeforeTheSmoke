@@ -1,0 +1,212 @@
+{
+  "grid": 24,
+  "strokeWidth": 1.5,
+  "icons": [
+    {
+      "id": "play",
+      "note": "Optically centred: centroid at x=12, not the bounding box. This is the bug in the current View-based triangle.",
+      "stroke": [],
+      "fill": [
+        "M8 4 L20 12 L8 20 Z"
+      ]
+    },
+    {
+      "id": "pause",
+      "note": "Bars 4 wide, 4 apart, 16 tall.",
+      "stroke": [],
+      "fill": [
+        "M6 4 H10 V20 H6 Z",
+        "M14 4 H18 V20 H14 Z"
+      ]
+    },
+    {
+      "id": "watch",
+      "note": "A real lens and pupil, replacing the bare ring currently in styles.eye.",
+      "stroke": [
+        "M3 12 C6.5 6.5 17.5 6.5 21 12 C17.5 17.5 6.5 17.5 3 12 Z",
+        "M15 12 A3 3 0 1 1 9 12 A3 3 0 1 1 15 12 Z"
+      ],
+      "fill": []
+    },
+    {
+      "id": "sound-on",
+      "stroke": [
+        "M4 9.5 H7.5 L12 5.5 V18.5 L7.5 14.5 H4 Z",
+        "M15.5 9.5 C17.2 11 17.2 13 15.5 14.5",
+        "M18.5 7 C21.5 10 21.5 14 18.5 17"
+      ],
+      "fill": []
+    },
+    {
+      "id": "sound-off",
+      "note": "Neutral colour, never palette.danger. Mute is a preference, not a failure.",
+      "stroke": [
+        "M4 9.5 H7.5 L12 5.5 V18.5 L7.5 14.5 H4 Z",
+        "M15.5 9 L21 14.5",
+        "M21 9 L15.5 14.5"
+      ],
+      "fill": []
+    },
+    {
+      "id": "chevron-right",
+      "stroke": [
+        "M9.5 5 L16.5 12 L9.5 19"
+      ],
+      "fill": []
+    },
+    {
+      "id": "chevron-left",
+      "stroke": [
+        "M14.5 5 L7.5 12 L14.5 19"
+      ],
+      "fill": []
+    },
+    {
+      "id": "close",
+      "note": "Return to the archive. The top bar currently has no exit affordance at all.",
+      "stroke": [
+        "M6 6 L18 18",
+        "M18 6 L6 18"
+      ],
+      "fill": []
+    },
+    {
+      "id": "rotate",
+      "note": "Clockwise. Arrowhead is a fill so the head stays solid at 16px.",
+      "stroke": [
+        "M12 4.5 A7.5 7.5 0 1 1 4.5 12"
+      ],
+      "fill": [
+        "M12 1.8 L16.2 4.5 L12 7.2 Z"
+      ]
+    },
+    {
+      "id": "replay",
+      "note": "Deliberately NOT a mirrored rotate arc: the two were unreadable side by side at 16px.",
+      "stroke": [],
+      "fill": [
+        "M5 4.5 H7.5 V19.5 H5 Z",
+        "M10 4.5 L20 12 L10 19.5 Z"
+      ]
+    },
+    {
+      "id": "signal-arrow",
+      "note": "Dart with a notched tail. See README: arrowPath() in SignalLayer currently emits a plain triangle because its four base points are collinear.",
+      "stroke": [],
+      "fill": [
+        "M20 12 L5.5 18.5 L9.5 12 L5.5 5.5 Z"
+      ]
+    },
+    {
+      "id": "socket",
+      "stroke": [
+        "M19.5 12 A7.5 7.5 0 1 1 4.5 12 A7.5 7.5 0 1 1 19.5 12 Z"
+      ],
+      "fill": [
+        "M14.5 12 A2.5 2.5 0 1 1 9.5 12 A2.5 2.5 0 1 1 14.5 12 Z"
+      ]
+    },
+    {
+      "id": "mark-rescue",
+      "note": "Earned. Three people, all accounted for.",
+      "stroke": [],
+      "fill": [
+        "M15 6.5 A3 3 0 1 1 9 6.5 A3 3 0 1 1 15 6.5 Z",
+        "M9.5 16.5 A3 3 0 1 1 3.5 16.5 A3 3 0 1 1 9.5 16.5 Z",
+        "M20.5 16.5 A3 3 0 1 1 14.5 16.5 A3 3 0 1 1 20.5 16.5 Z"
+      ]
+    },
+    {
+      "id": "mark-rescue-outline",
+      "note": "Unearned.",
+      "stroke": [
+        "M15 6.5 A3 3 0 1 1 9 6.5 A3 3 0 1 1 15 6.5 Z",
+        "M9.5 16.5 A3 3 0 1 1 3.5 16.5 A3 3 0 1 1 9.5 16.5 Z",
+        "M20.5 16.5 A3 3 0 1 1 14.5 16.5 A3 3 0 1 1 20.5 16.5 Z"
+      ],
+      "fill": []
+    },
+    {
+      "id": "mark-flow",
+      "note": "Earned. Three darts, unobstructed.",
+      "stroke": [],
+      "fill": [
+        "M4 6 L9.5 12 L4 18 L6.5 12 Z",
+        "M10 6 L15.5 12 L10 18 L12.5 12 Z",
+        "M16 6 L21.5 12 L16 18 L18.5 12 Z"
+      ]
+    },
+    {
+      "id": "mark-flow-outline",
+      "note": "Unearned.",
+      "stroke": [
+        "M4 6 L9.5 12 L4 18 L6.5 12 Z",
+        "M10 6 L15.5 12 L10 18 L12.5 12 Z",
+        "M16 6 L21.5 12 L16 18 L18.5 12 Z"
+      ],
+      "fill": []
+    },
+    {
+      "id": "mark-swift",
+      "note": "Earned. A dial with elapsed time removed. 300 degree sector, 60 degree wedge open at 1 o'clock.",
+      "stroke": [],
+      "fill": [
+        "M12 12 L18.93 8 A8 8 0 1 1 12 4 Z"
+      ]
+    },
+    {
+      "id": "mark-swift-outline",
+      "note": "Unearned.",
+      "stroke": [
+        "M12 12 L18.93 8 A8 8 0 1 1 12 4 Z"
+      ],
+      "fill": []
+    },
+    {
+      "id": "event-door",
+      "note": "Timeline strip. A leaf with its hinge.",
+      "stroke": [
+        "M7 3 H17 V21 H7 Z"
+      ],
+      "fill": [
+        "M11 12 A1.4 1.4 0 1 1 8.2 12 A1.4 1.4 0 1 1 11 12 Z"
+      ]
+    },
+    {
+      "id": "event-smoke",
+      "note": "Timeline strip. Overlapping volumes, echoing HazardLayer.",
+      "stroke": [],
+      "fill": [
+        "M13 15.5 A4.5 4.5 0 1 1 4 15.5 A4.5 4.5 0 1 1 13 15.5 Z",
+        "M18.5 12 A5.5 5.5 0 1 1 7.5 12 A5.5 5.5 0 1 1 18.5 12 Z",
+        "M21 16 A3.5 3.5 0 1 1 14 16 A3.5 3.5 0 1 1 21 16 Z"
+      ]
+    },
+    {
+      "id": "event-block",
+      "note": "Timeline strip. record.ts emits a fourth event kind, BLOCK ('Route blocked'), alongside DOOR, SMOKE and FAILURE.",
+      "stroke": [],
+      "fill": [
+        "M3.5 10.25 H20.5 V13.75 H3.5 Z",
+        "M3.5 5 H6.5 V19 H3.5 Z",
+        "M17.5 5 H20.5 V19 H17.5 Z"
+      ]
+    },
+    {
+      "id": "event-failure",
+      "note": "Timeline strip. Deliberately not an X, which would collide with close.",
+      "stroke": [],
+      "fill": [
+        "M12 4 L20.5 19.5 L3.5 19.5 Z"
+      ]
+    },
+    {
+      "id": "resolved",
+      "note": "Archive card stamp.",
+      "stroke": [
+        "M4.5 12.5 L9.5 17.5 L19.5 6.5"
+      ],
+      "fill": []
+    }
+  ]
+}
