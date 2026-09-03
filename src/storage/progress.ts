@@ -30,8 +30,12 @@ export interface LevelProgress {
 export interface RunRecord {
   levelId: string;
   attemptNo: number;
-  signalSocketId: string | null;
-  signalEdgeId: string | null;
+  /**
+   * The signals used, as "socket->edge" joined by " + ". Null for a run with
+   * none. A string rather than a list so the log line stays one flat record,
+   * and so a run placed with two signals reads the same way as one with one.
+   */
+  signalPlacements: string | null;
   savedCount: number;
   totalCount: number;
   finishTick: number | null;
@@ -100,7 +104,7 @@ async function saveProgress(map: ProgressMap): Promise<void> {
 export async function recordResult(
   map: ProgressMap,
   result: RunResult,
-  signal: SignalPlacement | null,
+  signals: SignalPlacement[],
 ): Promise<ProgressMap> {
   const current = map[result.levelId] ?? blank(result.levelId, true);
   const next: ProgressMap = {...map};
@@ -140,8 +144,9 @@ export async function recordResult(
   await appendRun({
     levelId: result.levelId,
     attemptNo: next[result.levelId].attemptCount,
-    signalSocketId: signal?.socketId ?? null,
-    signalEdgeId: signal?.edgeId ?? null,
+    signalPlacements: signals.length
+      ? signals.map(x => `${x.socketId}->${x.edgeId}`).sort().join(' + ')
+      : null,
     savedCount: result.savedCount,
     totalCount: result.totalCount,
     finishTick: result.finishTick,

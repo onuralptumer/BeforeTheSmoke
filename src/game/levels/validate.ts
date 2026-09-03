@@ -21,26 +21,72 @@ export function enumeratePlacements(level: LevelDefinition): SignalPlacement[] {
   return placements;
 }
 
+/**
+ * Every legal way to spend a level's signal budget.
+ *
+ * At budget 1 this is exactly `enumeratePlacements` wrapped one deep, so a
+ * one-signal level enumerates precisely what it always did. Above that it is
+ * every combination up to the budget, with at most one signal per junction —
+ * two arrows on one decision have no defined winner, and the engine rejects
+ * them. The empty set is excluded: that is the baseline, which callers run
+ * separately.
+ */
+export function enumerateSignalSets(
+  level: LevelDefinition,
+): SignalPlacement[][] {
+  const junctionOf = new Map(
+    level.signalSockets.map(s => [s.id, s.junctionId] as const),
+  );
+  const all = enumeratePlacements(level);
+  const budget = Math.max(1, level.signalBudget ?? 1);
+  const sets: SignalPlacement[][] = [];
+
+  const walk = (start: number, chosen: SignalPlacement[]) => {
+    if (chosen.length > 0) {
+      sets.push([...chosen]);
+    }
+    if (chosen.length === budget) {
+      return;
+    }
+    for (let i = start; i < all.length; i++) {
+      const candidate = all[i];
+      const junction = junctionOf.get(candidate.socketId);
+      if (chosen.some(c => junctionOf.get(c.socketId) === junction)) {
+        continue;
+      }
+      chosen.push(candidate);
+      walk(i + 1, chosen);
+      chosen.pop();
+    }
+  };
+  walk(0, []);
+  return sets;
+}
+
 export function runLevel(
   level: LevelDefinition,
-  signal: SignalPlacement | null,
+  signals: SignalPlacement[] | SignalPlacement | null,
 ): RunResult {
-  return new SimulationEngine(level, signal).run();
+  return new SimulationEngine(level, signals).run();
 }
 
 export interface LevelReport {
   levelId: string;
   baseline: RunResult;
-  placements: Array<{placement: SignalPlacement; result: RunResult}>;
-  solutions: SignalPlacement[];
+  placements: Array<{placement: SignalPlacement[]; result: RunResult}>;
+  solutions: SignalPlacement[][];
   problems: string[];
 }
 
-const label = (p: SignalPlacement) => `${p.socketId}->${p.edgeId}`;
+const one = (p: SignalPlacement) => `${p.socketId}->${p.edgeId}`;
+
+/** A signal set's identity, order-independent so a set has one name. */
+const label = (set: SignalPlacement[] | SignalPlacement): string =>
+  Array.isArray(set) ? set.map(one).sort().join(' + ') : one(set);
 
 export function validateLevel(level: LevelDefinition): LevelReport {
   const baseline = runLevel(level, null);
-  const placements = enumeratePlacements(level).map(placement => ({
+  const placements = enumerateSignalSets(level).map(placement => ({
     placement,
     result: runLevel(level, placement),
   }));
@@ -55,7 +101,7 @@ export function validateLevel(level: LevelDefinition): LevelReport {
     );
   }
   if (solutions.length === 0) {
-    problems.push('no single signal placement solves the level');
+    problems.push('no legal signal placement solves the level');
   }
 
   const solved = new Set(solutions.map(label));

@@ -30,7 +30,8 @@ interface Props {
   level: LevelDefinition;
   viewport: Viewport;
   showSockets: boolean;
-  signal: SignalPlacement | null;
+  /** Every signal the player has placed. A level's budget caps the count. */
+  signals: SignalPlacement[];
   dragPoint: {x: number; y: number} | null;
   hoveredSocketId: string | null;
   phase: number;
@@ -40,16 +41,80 @@ function socketCentre(v: Viewport, socket: SignalSocketDefinition) {
   return cellCentre(v, socket.anchorCell);
 }
 
-function facingFor(level: LevelDefinition, edgeId: string, from: Vec2) {
+/**
+ * The first cell at which this edge stops agreeing with the others the socket
+ * can point along — the cell where the choice is actually made.
+ *
+ * Two routes out of a junction can share their opening stretch. On level 10 the
+ * middle socket is the case that matters: both of its edges leave J3 through
+ * the same doorway at (6,12) and only part company two cells later, one
+ * carrying on north to E1 and the other turning west to E4. Taking the
+ * direction from the first cell therefore drew the identical arrow for both,
+ * and turning the signal looked like it did nothing at all.
+ */
+function divergenceIndex(cells: Vec2[], siblings: Vec2[][]): number {
+  if (siblings.length === 0) {
+    return 0;
+  }
+  for (let i = 0; i < cells.length; i++) {
+    for (const other of siblings) {
+      const c = other[i];
+      if (!c || c.x !== cells[i].x || c.y !== cells[i].y) {
+        return i;
+      }
+    }
+  }
+  return 0;
+}
+
+/**
+ * Which way the signal points: the direction of travel through the cell where
+ * this route separates from the alternatives, not the direction out of the
+ * junction. Those are usually the same cell, and where they are not, only the
+ * divergence tells the player which way they have just sent everybody.
+ */
+function facingFor(
+  level: LevelDefinition,
+  edgeId: string,
+  from: Vec2,
+  socket?: SignalSocketDefinition,
+) {
   const edge = level.graph.edges.find(e => e.id === edgeId);
-  const first = edge?.cells[0];
-  if (!first) {
+  if (!edge || edge.cells.length === 0) {
     return {dx: 0, dy: -1};
   }
-  const dx = first.x - from.x;
-  const dy = first.y - from.y;
+
+  const siblings = (socket?.allowedEdgeIds ?? [])
+    .filter(id => id !== edgeId)
+    .map(id => level.graph.edges.find(e => e.id === id)?.cells ?? []);
+
+  const i = divergenceIndex(edge.cells, siblings);
+  const target = edge.cells[i];
+  const previous = i === 0 ? from : edge.cells[i - 1];
+
+  const dx = target.x - previous.x;
+  const dy = target.y - previous.y;
   const len = Math.hypot(dx, dy) || 1;
   return {dx: dx / len, dy: dy / len};
+}
+
+/** How far along the edge the beam reaches: past the divergence, never to the exit. */
+function beamIndex(
+  level: LevelDefinition,
+  edgeId: string,
+  socket?: SignalSocketDefinition,
+): number {
+  const edge = level.graph.edges.find(e => e.id === edgeId);
+  if (!edge) {
+    return 0;
+  }
+  const siblings = (socket?.allowedEdgeIds ?? [])
+    .filter(id => id !== edgeId)
+    .map(id => level.graph.edges.find(e => e.id === id)?.cells ?? []);
+  const i = divergenceIndex(edge.cells, siblings);
+  // Two cells is enough to state a direction; further only when the routes
+  // have not separated by then.
+  return Math.min(Math.max(2, i), edge.cells.length - 1);
 }
 
 /**
@@ -216,12 +281,12 @@ function SignalLayerImpl({
   level,
   viewport,
   showSockets,
-  signal,
+  signals,
   dragPoint,
   hoveredSocketId,
   phase,
 }: Props) {
-  if (!showSockets && !signal) {
+  if (!showSockets && signals.length === 0) {
     return null;
   }
 
@@ -231,7 +296,8 @@ function SignalLayerImpl({
 
   if (showSockets) {
     for (const socket of level.signalSockets) {
-      if (signal?.socketId === socket.id) {
+      // A socket holding a signal is drawn as the signal, not as an opening.
+      if (signals.some(x => x.socketId === socket.id)) {
         continue;
       }
       nodes.push(
@@ -246,19 +312,17 @@ function SignalLayerImpl({
     }
   }
 
-  if (signal) {
+  for (const signal of signals) {
     const socket = level.signalSockets.find(s => s.id === signal.socketId);
     const junction = level.graph.nodes.find(n => n.id === socket?.junctionId);
     const edge = level.graph.edges.find(e => e.id === signal.edgeId);
     if (socket && junction) {
       const centre = socketCentre(viewport, socket);
-      const facing = facingFor(level, signal.edgeId, junction.cell);
-      // Point at the third cell along: enough to state a direction, far short
-      // of showing where the corridor goes.
-      const beamCell = edge?.cells[Math.min(2, edge.cells.length - 1)];
+      const facing = facingFor(level, signal.edgeId, junction.cell, socket);
+      const beamCell = edge?.cells[beamIndex(level, signal.edgeId, socket)];
       nodes.push(
         <SignalUnit
-          key="signal"
+          key={`signal${signal.socketId}`}
           centre={centre}
           facing={facing}
           cell={c}

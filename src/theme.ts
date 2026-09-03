@@ -23,6 +23,15 @@ export const palette = {
   wall: '#22262B',
   wallInner: '#3A4149',
 
+  /**
+   * Room interiors. A shade under `floor`, so that on an office plan the
+   * corridor stays the brightest thing and reads as the route — the player has
+   * to be able to see where a person can actually walk.
+   */
+  floorRoom: '#ACA294',
+  /** Furniture. Quieter than the walls that contain it. */
+  furniture: '#9C948A',
+
   /** Fixtures and door leaves. */
   structure: '#8A9299',
 

@@ -73,4 +73,62 @@ export const level05: LevelDefinition = {
   criticalDecision: {junctionId: 'J1'},
   intendedSolutions: [{socketId: 'sock-j1', edgeId: eJ1E2.id}],
   temptingFailures: [{socketId: 'sock-j2', edgeId: eJ2E3.id}],
+  // The building the corridors run through. Rooms are authored to fill the
+  // footprint everywhere the graph is not, so the space left between them is
+  // exactly the circulation — see levels.floorplan.test.ts, which fails if a
+  // room ever covers a cell somebody can walk on.
+  floorPlan: {
+    shell: {x: 0, y: 10, w: 12, h: 10},
+    rooms: [
+      {label: 'Open Plan', x: 0, y: 10, w: 10, h: 2, door: at(2, 11)},
+      {label: 'Server', x: 11, y: 10, w: 1, h: 2, door: at(11, 11)},
+      {label: 'Store', x: 0, y: 12, w: 2, h: 4, door: at(1, 14)},
+      {label: 'Meeting', x: 3, y: 12, w: 7, h: 3, door: at(6, 14)},
+      {label: 'Riser', x: 11, y: 12, w: 1, h: 4, door: at(11, 13)},
+      {label: 'Archive', x: 0, y: 16, w: 3, h: 3, door: at(2, 17)},
+      {label: 'WC', x: 4, y: 16, w: 2, h: 4, door: at(5, 16)},
+      {label: 'Studio', x: 7, y: 16, w: 5, h: 4, door: at(7, 17)},
+    ],
+    props: [
+      // Open plan: two banks of desks.
+      {kind: 'desk', cell: at(1, 10)},
+      {kind: 'desk', cell: at(3, 10)},
+      {kind: 'desk', cell: at(5, 10)},
+      {kind: 'desk', cell: at(7, 10)},
+      {kind: 'desk', cell: at(1, 11)},
+      {kind: 'desk', cell: at(3, 11)},
+      {kind: 'desk', cell: at(5, 11)},
+      {kind: 'plant', cell: at(8, 10)},
+      // The boardroom table spans two cells.
+      {kind: 'meeting', cell: at(5, 13)},
+      {kind: 'chair', cell: at(4, 12)},
+      {kind: 'chair', cell: at(8, 13)},
+      {kind: 'plant', cell: at(9, 12)},
+      {kind: 'cabinet', cell: at(3, 13)},
+      // Store and archive.
+      {kind: 'cabinet', cell: at(0, 12)},
+      {kind: 'cabinet', cell: at(0, 13)},
+      {kind: 'cabinet', cell: at(1, 12)},
+      {kind: 'cabinet', cell: at(0, 16)},
+      {kind: 'cabinet', cell: at(1, 16)},
+      {kind: 'cabinet', cell: at(0, 17)},
+      {kind: 'sofa', cell: at(1, 18)},
+      // Washrooms.
+      {kind: 'wc', cell: at(4, 17)},
+      {kind: 'wc', cell: at(5, 17)},
+      {kind: 'wc', cell: at(4, 18)},
+      {kind: 'wc', cell: at(5, 18)},
+      // Studio.
+      {kind: 'desk', cell: at(8, 16)},
+      {kind: 'desk', cell: at(10, 16)},
+      {kind: 'desk', cell: at(8, 18)},
+      {kind: 'desk', cell: at(10, 18)},
+      {kind: 'table', cell: at(9, 17)},
+      {kind: 'plant', cell: at(11, 19)},
+      {kind: 'sofa', cell: at(7, 19)},
+      // Risers.
+      {kind: 'cabinet', cell: at(11, 10)},
+      {kind: 'cabinet', cell: at(11, 14)},
+    ],
+  },
 };

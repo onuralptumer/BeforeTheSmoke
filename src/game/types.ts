@@ -94,6 +94,16 @@ export interface LevelDefinition {
   doorCells: Vec2[];
   agents: AgentSpawnDefinition[];
   signalSockets: SignalSocketDefinition[];
+  /**
+   * How many signals the player may place. Defaults to 1.
+   *
+   * The budget is the level's difficulty dial: more signals means a wider
+   * search space rather than a longer one, because the placements interact.
+   * Two signals may never land on the same junction — two arrows on one
+   * decision would have no defined winner — so the real ceiling is the number
+   * of distinct junctions with sockets.
+   */
+  signalBudget?: number;
   events: WorldEvent[];
   /** Hard run cap. Guarantees termination when a level deadlocks (spec §5.5, Level 7). */
   maxTicks: number;
@@ -114,6 +124,53 @@ export interface LevelDefinition {
    * abbreviation, not a full name.
    */
   rooms?: Array<{label: string; cell: Vec2}>;
+  /** The building this incident happens inside. Presentation only. */
+  floorPlan?: FloorPlan;
+}
+
+/** A furniture item. Kinds are drawn, not simulated. */
+export type PropKind =
+  | 'desk'
+  | 'chair'
+  | 'table'
+  | 'meeting'
+  | 'plant'
+  | 'sofa'
+  | 'cabinet'
+  | 'wc';
+
+export interface OfficeRoom {
+  /** Shown in tiny caps if the room is big enough to hold it. */
+  label?: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /**
+   * Where the doorway is, as a cell on the room's own perimeter. Drawn as a gap
+   * in the wall, so a room reads as enterable rather than sealed.
+   */
+  door?: Vec2;
+}
+
+/**
+ * The drawn building, as opposed to the navigable one.
+ *
+ * The simulation's geometry comes from the graph and nothing here can change
+ * it. What this adds is the office the corridors run through: an outer shell,
+ * the rooms partitioned off it, and the furniture in them.
+ *
+ * The rule that keeps it honest is enforced by `levels.floorplan.test.ts`: a
+ * room may never cover a walkable cell. Rooms fill the footprint everywhere the
+ * graph is not, so what is left over between them *is* the circulation. That
+ * way the plan can look like an office while still showing exactly where a
+ * person is able to walk — which is the whole basis for the analysis phase.
+ */
+export interface FloorPlan {
+  /** Building footprint, in cells. */
+  shell: { x: number; y: number; w: number; h: number };
+  rooms: OfficeRoom[];
+  props: Array<{ kind: PropKind; cell: Vec2; rot?: number }>;
 }
 
 export type AgentState = 'PENDING' | 'ACTIVE' | 'SAFE' | 'INCAPACITATED';
@@ -158,7 +215,8 @@ export type FailureReason =
 
 export interface RunResult {
   levelId: string;
-  signal: SignalPlacement | null;
+  /** Every signal that was in play. Empty for the baseline run. */
+  signals: SignalPlacement[];
   success: boolean;
   savedCount: number;
   totalCount: number;

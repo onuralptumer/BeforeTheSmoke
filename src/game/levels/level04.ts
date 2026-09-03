@@ -91,12 +91,4 @@ export const level04: LevelDefinition = {
   criticalDecision: {junctionId: 'J1'},
   intendedSolutions: [{socketId: 'sock-j1', edgeId: eJ1E2.id}],
   temptingFailures: [{socketId: 'sock-j2', edgeId: eJ2E3.id}],
-  // A label is drawn from its cell rightwards, so it needs the corridor width
-  // to sit in: the one-cell stair takes an abbreviation, the wide run at row 15
-  // takes full names.
-  rooms: [
-    {label: 'St 2', cell: at(2, 13)},
-    {label: 'Corridor B', cell: at(4, 15)},
-    {label: 'Lobby', cell: at(7, 15)},
-  ],
 };

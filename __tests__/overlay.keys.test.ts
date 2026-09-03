@@ -18,17 +18,17 @@
  */
 
 import {LEVELS} from '../src/game/levels';
-import {enumeratePlacements} from '../src/game/levels/validate';
+import {enumerateSignalSets} from '../src/game/levels/validate';
 import {recordRun} from '../src/game/replay/record';
 import {SignalPlacement, Vec2} from '../src/game/types';
 
-const label = (p: SignalPlacement | null) =>
-  p ? `${p.socketId}->${p.edgeId}` : 'baseline';
+const label = (set: SignalPlacement[] | null) =>
+  set ? set.map(p => `${p.socketId}->${p.edgeId}`).join(' + ') : 'baseline';
 
 /** Every legal run of every level: the baseline plus each placement. */
 function* everyRun() {
   for (const level of LEVELS) {
-    for (const placement of [null, ...enumeratePlacements(level)]) {
+    for (const placement of [null, ...enumerateSignalSets(level)]) {
       yield {level, placement, run: recordRun(level, placement)};
     }
   }

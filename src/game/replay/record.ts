@@ -21,7 +21,8 @@ import {
 
 export interface RecordedRun {
   levelId: string;
-  signal: SignalPlacement | null;
+  /** Every signal in play for this attempt. Empty for the baseline. */
+  signals: SignalPlacement[];
   frames: FrameSnapshot[];
   decisions: DecisionLogEntry[];
   result: RunResult;
@@ -34,9 +35,9 @@ export interface RecordedRun {
 
 export function recordRun(
   level: LevelDefinition,
-  signal: SignalPlacement | null,
+  signals: SignalPlacement[] | SignalPlacement | null,
 ): RecordedRun {
-  const engine = new SimulationEngine(level, signal);
+  const engine = new SimulationEngine(level, signals);
   const frames: FrameSnapshot[] = [engine.snapshot()];
   while (!engine.finished) {
     engine.step();
@@ -61,7 +62,7 @@ export function recordRun(
   const result = engine.result();
   const run: RecordedRun = {
     levelId: level.id,
-    signal,
+    signals: engine.signals,
     frames,
     decisions: engine.decisionLog,
     result,

@@ -76,14 +76,19 @@ interface Agent {
 export class SimulationEngine {
   readonly level: LevelDefinition;
   readonly map: WorldMap;
-  readonly signal: SignalPlacement | null;
+  /**
+   * Every signal in play. A level's `signalBudget` caps how many the player may
+   * place; the engine only requires that no two land on the same junction,
+   * because two arrows on one decision would have no defined winner.
+   */
+  readonly signals: SignalPlacement[];
 
   private agents: Agent[] = [];
   private smoke = new Set<CellKey>();
   private closedDoors = new Set<CellKey>();
   private blockedEdges = new Set<string>();
   private occupancy = new Map<CellKey, string>();
-  private signalJunctionId: string | null = null;
+  private signalledEdgeByJunction = new Map<string, string>();
 
   tick = 0;
   finished = false;
@@ -94,12 +99,23 @@ export class SimulationEngine {
 
   readonly decisionLog: DecisionLogEntry[] = [];
 
-  constructor(level: LevelDefinition, signal: SignalPlacement | null = null) {
+  constructor(
+    level: LevelDefinition,
+    signals: SignalPlacement[] | SignalPlacement | null = null,
+  ) {
     this.level = level;
     this.map = new WorldMap(level);
-    this.signal = signal;
+    // A bare placement is still accepted; most levels only ever have one.
+    this.signals = signals === null ? [] : Array.isArray(signals) ? signals : [signals];
 
-    if (signal) {
+    const budget = level.signalBudget ?? 1;
+    if (this.signals.length > budget) {
+      throw new Error(
+        `${level.id}: ${this.signals.length} signals placed but the budget is ${budget}`,
+      );
+    }
+
+    for (const signal of this.signals) {
       const socket = level.signalSockets.find(s => s.id === signal.socketId);
       if (!socket) {
         throw new Error(`${level.id}: unknown socket ${signal.socketId}`);
@@ -109,7 +125,12 @@ export class SimulationEngine {
           `${level.id}: socket ${signal.socketId} cannot point along ${signal.edgeId}`,
         );
       }
-      this.signalJunctionId = socket.junctionId;
+      if (this.signalledEdgeByJunction.has(socket.junctionId)) {
+        throw new Error(
+          `${level.id}: two signals on junction ${socket.junctionId}`,
+        );
+      }
+      this.signalledEdgeByJunction.set(socket.junctionId, signal.edgeId);
     }
 
     this.agents = level.agents.map((definition, index) => ({
@@ -354,8 +375,9 @@ export class SimulationEngine {
       }
     }
 
-    if (this.signal && this.signalJunctionId === junctionId) {
-      const signalled = safeEdges.find(e => e.id === this.signal!.edgeId);
+    const signalledEdgeId = this.signalledEdgeByJunction.get(junctionId);
+    if (signalledEdgeId !== undefined) {
+      const signalled = safeEdges.find(e => e.id === signalledEdgeId);
       if (signalled) {
         return {edge: signalled, reason: 'FOLLOWED_SIGNAL'};
       }
@@ -708,7 +730,7 @@ export class SimulationEngine {
     const rescue = this.success;
     return {
       levelId: this.level.id,
-      signal: this.signal,
+      signals: this.signals,
       success: this.success,
       savedCount: saved,
       totalCount: this.agents.length,

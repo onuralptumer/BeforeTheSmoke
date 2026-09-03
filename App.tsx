@@ -54,7 +54,7 @@ function App() {
   progressRef.current = progress;
 
   const handleResult = useCallback((run: RecordedRun) => {
-    recordResult(progressRef.current, run.result, run.signal).then(setProgress);
+    recordResult(progressRef.current, run.result, run.signals).then(setProgress);
   }, []);
 
   const currentIndex = level ? LEVELS.findIndex(l => l.id === level.id) : -1;

@@ -103,7 +103,7 @@ export function GameScreen({
   const baseline = useMemo(() => recordRun(level, null), [level]);
 
   const [phase, setPhase] = useState<Phase>('INTRO');
-  const [signal, setSignal] = useState<SignalPlacement | null>(null);
+  const [signals, setSignals] = useState<SignalPlacement[]>([]);
   const [run, setRun] = useState<RecordedRun>(baseline);
   const [showBefore, setShowBefore] = useState(false);
   const [dragPoint, setDragPoint] = useState<{x: number; y: number} | null>(null);
@@ -111,17 +111,36 @@ export function GameScreen({
   const [mapSize, setMapSize] = useState({width: 0, height: 0});
   const lastHovered = useRef<string | null>(null);
 
+  // Where the map sits on screen. The drag starts on the tray, which lives in
+  // the dock, so gesture coordinates arrive in window space and have to be
+  // brought back into map space before they can be matched against a socket.
+  const mapRef = useRef<React.ComponentRef<typeof View>>(null);
+  const mapOrigin = useRef({x: 0, y: 0});
+
+  const budget = level.signalBudget ?? 1;
+  const remaining = budget - signals.length;
+
   // Frame the part of the grid this level actually uses, so a sparse plan
   // fills the screen instead of floating in empty ground.
-  const bounds = useMemo(
-    () =>
-      contentBounds(
-        (x, y) => map.tiles[y][x] === 'WALL',
-        level.width,
-        level.height,
-      ),
-    [map, level.width, level.height],
-  );
+  const bounds = useMemo(() => {
+    const b = contentBounds(
+      (x, y) => map.tiles[y][x] === 'WALL',
+      level.width,
+      level.height,
+    );
+    const shell = level.floorPlan?.shell;
+    if (!shell) {
+      return b;
+    }
+    // Frame the whole building, not just the corridors inside it. Without this
+    // a room that sits outside the graph's bounding box gets cropped off.
+    return {
+      minX: Math.min(b.minX, shell.x),
+      minY: Math.min(b.minY, shell.y),
+      maxX: Math.max(b.maxX, shell.x + shell.w - 1),
+      maxY: Math.max(b.maxY, shell.y + shell.h - 1),
+    };
+  }, [map, level.width, level.height, level.floorPlan]);
 
   const viewport: Viewport = useMemo(
     () =>
@@ -162,13 +181,13 @@ export function GameScreen({
   }, [restart, play]);
 
   const replayWithSignal = useCallback(() => {
-    if (!signal) {
+    if (signals.length === 0) {
       return;
     }
-    setRun(recordRun(level, signal));
+    setRun(recordRun(level, signals));
     setPhase('REPLAYING');
     requestAnimationFrame(play);
-  }, [level, signal, play]);
+  }, [level, signals, play]);
 
   const retry = useCallback(() => {
     setPhase('ANALYZING');
@@ -198,36 +217,57 @@ export function GameScreen({
     [socketPoints],
   );
 
-  // The gesture is attached to the map view, so its x/y are already in map
-  // space — no measuring, and nothing to go stale when the layout changes.
+  /**
+   * Dragging a signal out of the tray.
+   *
+   * The signal used to appear on a socket from anywhere on the map, which gave
+   * the player's one intervention no sense of being a thing they were holding.
+   * It now starts in the tray at the bottom of the dock and is carried onto the
+   * plan, so a placement costs a deliberate gesture and the tray visibly runs
+   * out. Coordinates arrive in window space because the gesture begins outside
+   * the map view, so they are rebased through `mapOrigin` before being matched.
+   */
+  const toMap = useCallback(
+    (e: {absoluteX: number; absoluteY: number}) => ({
+      x: e.absoluteX - mapOrigin.current.x,
+      y: e.absoluteY - mapOrigin.current.y,
+    }),
+    [],
+  );
+
   const pan = useMemo(
     () =>
       Gesture.Pan()
-        .enabled(canPlace)
-        .onBegin(e => setDragPoint({x: e.x, y: e.y}))
+        .enabled(canPlace && remaining > 0)
+        .onBegin(e => setDragPoint(toMap(e)))
         .onUpdate(e => {
-          setDragPoint({x: e.x, y: e.y});
-          const hit = nearestSocket(e.x, e.y);
-          if (hit !== lastHovered.current) {
-            lastHovered.current = hit;
-            setHoveredSocketId(hit);
-            if (hit) {
+          const point = toMap(e);
+          setDragPoint(point);
+          const hit = nearestSocket(point.x, point.y);
+          // A socket that already holds a signal is not a drop target.
+          const free = hit && !signals.some(x => x.socketId === hit) ? hit : null;
+          if (free !== lastHovered.current) {
+            lastHovered.current = free;
+            setHoveredSocketId(free);
+            if (free) {
               haptics.socketHover();
             }
           }
         })
         .onEnd(e => {
-          const hit = nearestSocket(e.x, e.y);
-          if (hit) {
-            const socket = level.signalSockets.find(s => s.id === hit)!;
-            setSignal(current =>
-              current?.socketId === hit
-                ? current
-                : {socketId: hit, edgeId: socket.allowedEdgeIds[0]},
-            );
-            haptics.signalSnap();
-            sounds.signalSnap();
+          const point = toMap(e);
+          const hit = nearestSocket(point.x, point.y);
+          if (!hit || signals.some(x => x.socketId === hit)) {
+            return;
           }
+          const socket = level.signalSockets.find(s => s.id === hit)!;
+          setSignals(current =>
+            current.length >= budget
+              ? current
+              : [...current, {socketId: hit, edgeId: socket.allowedEdgeIds[0]}],
+          );
+          haptics.signalSnap();
+          sounds.signalSnap();
         })
         .onFinalize(() => {
           setDragPoint(null);
@@ -235,24 +275,52 @@ export function GameScreen({
           lastHovered.current = null;
         })
         .runOnJS(true),
-    [canPlace, nearestSocket, level.signalSockets],
+    [
+      canPlace,
+      remaining,
+      toMap,
+      nearestSocket,
+      signals,
+      level.signalSockets,
+      budget,
+    ],
   );
 
-  const rotate = useCallback(() => {
-    if (!signal) {
-      return;
-    }
-    const socket = level.signalSockets.find(s => s.id === signal.socketId);
-    if (!socket) {
-      return;
-    }
-    const index = socket.allowedEdgeIds.indexOf(signal.edgeId);
-    const nextEdge =
-      socket.allowedEdgeIds[(index + 1) % socket.allowedEdgeIds.length];
-    setSignal({socketId: signal.socketId, edgeId: nextEdge});
-    haptics.rotate();
-    sounds.rotate();
-  }, [signal, level.signalSockets]);
+  /** Tapping a placed signal turns it; tapping it again cycles on round. */
+  const tapMap = useMemo(
+    () =>
+      Gesture.Tap()
+        .enabled(canPlace)
+        .onEnd(e => {
+          const hit = nearestSocket(e.x, e.y);
+          if (!hit) {
+            return;
+          }
+          const socket = level.signalSockets.find(s => s.id === hit);
+          if (!socket || !signals.some(x => x.socketId === hit)) {
+            return;
+          }
+          setSignals(current =>
+            current.map(x => {
+              if (x.socketId !== hit) {
+                return x;
+              }
+              const i = socket.allowedEdgeIds.indexOf(x.edgeId);
+              return {
+                socketId: x.socketId,
+                edgeId:
+                  socket.allowedEdgeIds[(i + 1) % socket.allowedEdgeIds.length],
+              };
+            }),
+          );
+          haptics.rotate();
+          sounds.rotate();
+        })
+        .runOnJS(true),
+    [canPlace, nearestSocket, level.signalSockets, signals],
+  );
+
+  const clearSignals = useCallback(() => setSignals([]), []);
 
   const frame = run.frames[Math.min(playback.tickIndex, run.frames.length - 1)];
   const safeCount = frame.agents.filter(a => a.state === 'SAFE').length;
@@ -288,6 +356,11 @@ export function GameScreen({
   const onMapLayout = useCallback((e: LayoutChangeEvent) => {
     const {width, height} = e.nativeEvent.layout;
     setMapSize({width, height});
+    // Window position, not parent-relative: the tray drag reports in window
+    // coordinates and has to be rebased into this view.
+    mapRef.current?.measureInWindow((x: number, y: number) => {
+      mapOrigin.current = {x, y};
+    });
   }, []);
 
   const blamedCell = useMemo(
@@ -309,8 +382,8 @@ export function GameScreen({
         onToggleMute={onToggleMute}
       />
 
-      <GestureDetector gesture={pan}>
-        <View style={styles.map} onLayout={onMapLayout}>
+      <GestureDetector gesture={tapMap}>
+        <View ref={mapRef} style={styles.map} onLayout={onMapLayout}>
           {mapSize.width > 0 && (
             <GameCanvas
               level={level}
@@ -320,7 +393,7 @@ export function GameScreen({
               tickIndex={playback.tickIndex}
               alpha={playback.alpha}
               showSockets={canPlace}
-              signal={signal}
+              signals={signals}
               dragPoint={dragPoint}
               hoveredSocketId={hoveredSocketId}
               ghostRun={showBefore ? baseline : null}
@@ -377,8 +450,10 @@ export function GameScreen({
 
         {phase === 'PLACING' && (
           <PlacementBar
-            signal={signal}
-            onRotate={rotate}
+            placed={signals.length}
+            budget={budget}
+            trayGesture={pan}
+            onClear={clearSignals}
             onReplay={replayWithSignal}
             onBack={() => setPhase('ANALYZING')}
           />
@@ -658,34 +733,75 @@ function Timeline({
   );
 }
 
+/**
+ * The tray, and what can be done with what is in it.
+ *
+ * The tray is the origin of a placement rather than a decoration: a signal is
+ * dragged out of it and onto a socket, so the player's one intervention is
+ * something they pick up and carry rather than something that appears where
+ * they tapped. Levels with a larger budget show a chip per signal, and the
+ * count says how many are left to spend without the player having to count
+ * arrows on the plan.
+ */
 function PlacementBar({
-  signal,
-  onRotate,
+  placed,
+  budget,
+  trayGesture,
+  onClear,
   onReplay,
   onBack,
 }: {
-  signal: SignalPlacement | null;
-  onRotate: () => void;
+  placed: number;
+  budget: number;
+  trayGesture: ReturnType<typeof Gesture.Pan>;
+  onClear: () => void;
   onReplay: () => void;
   onBack: () => void;
 }) {
+  const remaining = budget - placed;
+  const hint =
+    remaining === 0
+      ? budget === 1
+        ? 'Tap the signal to turn it, or clear it to move it somewhere else.'
+        : 'All signals placed. Tap one to turn it, or clear to start again.'
+      : placed === 0
+      ? `Drag the signal onto a socket.${budget > 1 ? ` You have ${budget}.` : ''}`
+      : `${remaining} signal${remaining === 1 ? '' : 's'} left. Tap a placed one to turn it.`;
+
   return (
     <View style={styles.panel}>
       <View style={styles.panelHead}>
-        <Text style={styles.panelTitleSignal}>PLACE ONE SIGNAL</Text>
-        <View style={styles.tray}>
-          <View style={styles.trayChip}>
-            <Icon name="signal-arrow" size={18} color={palette.signal} />
+        <Text style={styles.panelTitleSignal}>
+          {budget === 1 ? 'PLACE ONE SIGNAL' : `PLACE ${budget} SIGNALS`}
+        </Text>
+
+        {/* Drag starts here. Every unspent signal is a chip; the last one is
+            the handle, so the pile visibly shrinks as they are placed. */}
+        <GestureDetector gesture={trayGesture}>
+          <View style={styles.tray} accessibilityLabel="Signal tray">
+            <View style={styles.trayChips}>
+              {Array.from({length: budget}, (_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.trayChip,
+                    i >= remaining && styles.trayChipSpent,
+                  ]}>
+                  <Icon
+                    name="signal-arrow"
+                    size={18}
+                    color={i < remaining ? palette.signal : palette.textMuted}
+                    opacity={i < remaining ? 1 : 0.5}
+                  />
+                </View>
+              ))}
+            </View>
+            <Text style={styles.trayCount}>{remaining}</Text>
           </View>
-          <Text style={styles.trayCount}>{signal ? 0 : 1}</Text>
-        </View>
+        </GestureDetector>
       </View>
 
-      <Text style={styles.subCause}>
-        {signal
-          ? 'Tap rotate to turn it. Drag to move it.'
-          : 'Drag the signal onto a socket.'}
-      </Text>
+      <Text style={styles.subCause}>{hint}</Text>
 
       <View style={styles.row}>
         <Pressable
@@ -695,17 +811,17 @@ function PlacementBar({
           <Text style={styles.secondaryLabel}>BACK</Text>
         </Pressable>
         <Pressable
-          style={[styles.secondary, !signal && styles.disabled]}
+          style={[styles.secondary, placed === 0 && styles.disabled]}
           accessibilityRole="button"
-          accessibilityState={{disabled: !signal}}
-          onPress={signal ? onRotate : undefined}>
-          <Text style={styles.secondaryLabel}>ROTATE</Text>
+          accessibilityState={{disabled: placed === 0}}
+          onPress={placed > 0 ? onClear : undefined}>
+          <Text style={styles.secondaryLabel}>CLEAR</Text>
         </Pressable>
         <Pressable
-          style={[styles.primary, styles.grow, !signal && styles.disabled]}
+          style={[styles.primary, styles.grow, placed === 0 && styles.disabled]}
           accessibilityRole="button"
-          accessibilityState={{disabled: !signal}}
-          onPress={signal ? onReplay : undefined}>
+          accessibilityState={{disabled: placed === 0}}
+          onPress={placed > 0 ? onReplay : undefined}>
           <Text style={styles.primaryLabel}>REPLAY</Text>
         </Pressable>
       </View>
@@ -964,6 +1080,8 @@ const styles = StyleSheet.create({
   disabled: {opacity: state.disabledOpacity},
 
   tray: {flexDirection: 'row', alignItems: 'center', gap: space.sm},
+  trayChips: {flexDirection: 'row', gap: space.xs},
+  trayChipSpent: {opacity: 0.5},
   trayChip: {
     width: 30,
     height: 30,

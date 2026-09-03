@@ -28,7 +28,7 @@ interface Props {
   tickIndex: number;
   alpha: number;
   showSockets: boolean;
-  signal: SignalPlacement | null;
+  signals: SignalPlacement[];
   dragPoint: {x: number; y: number} | null;
   hoveredSocketId: string | null;
   /** Trails from the baseline attempt, drawn as ghosts. */
@@ -52,7 +52,7 @@ export function GameCanvas({
   tickIndex,
   alpha,
   showSockets,
-  signal,
+  signals,
   dragPoint,
   hoveredSocketId,
   ghostRun,
@@ -209,7 +209,7 @@ export function GameCanvas({
         level={level}
         viewport={viewport}
         showSockets={showSockets}
-        signal={signal}
+        signals={signals}
         dragPoint={dragPoint}
         hoveredSocketId={hoveredSocketId}
         phase={phase}

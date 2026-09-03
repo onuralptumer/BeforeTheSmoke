@@ -27,6 +27,8 @@ import {CellKey, LevelDefinition, Vec2, cellKey} from '../../game/types';
 import {WorldMap} from '../../game/engine/world';
 import {Viewport, cellOrigin} from '../geometry';
 import {palette} from '../../theme';
+import {OfficeLayer} from './OfficeLayer';
+import {deriveFloorPlan} from '../floorplan';
 
 /**
  * Round a stroke width to a whole number of device pixels.
@@ -150,6 +152,13 @@ function FloorLayerImpl({level, map, viewport, closedDoors}: Props) {
     y < level.height &&
     map.tiles[y][x] !== 'WALL';
 
+  // A hand-authored plan wins; otherwise one is derived from the same rule —
+  // rooms packed into the space the graph does not use.
+  const plan = useMemo(
+    () => level.floorPlan ?? deriveFloorPlan(level, map),
+    [level, map],
+  );
+
   const {floorPath, wallPath} = useMemo(() => {
     const floor = Skia.Path.Make();
     const wall = Skia.Path.Make();
@@ -248,7 +257,15 @@ function FloorLayerImpl({level, map, viewport, closedDoors}: Props) {
         <BlurMask blur={c * 0.5} style="normal" />
       </Path>
 
-      <Path path={floorPath} color={palette.floor} />
+      {/* A level with a floor plan draws the whole building — slab, rooms,
+          furniture, partitions — and the corridors are the space left between
+          the rooms. Without one, the corridors are all there is, and the slab
+          is cut to the shape of the graph. */}
+      {plan ? (
+        <OfficeLayer plan={plan} viewport={viewport} />
+      ) : (
+        <Path path={floorPath} color={palette.floor} />
+      )}
 
       {/* The floor was one flat fill, which is what makes a large light area
           read as vector clipart rather than as a lit surface. A wide radial
@@ -277,21 +294,25 @@ function FloorLayerImpl({level, map, viewport, closedDoors}: Props) {
           Both widths are snapped to whole device pixels — `c * 0.22` lands on a
           fraction at most cell sizes, which puts the line between two physical
           pixels and blurs it by a different amount on every device. */}
-      <Path
-        path={wallPath}
-        color={palette.wall}
-        style="stroke"
-        strokeWidth={snapStroke(Math.max(2, c * 0.22))}
-        strokeCap="square"
-      />
-      <Path
-        path={wallPath}
-        color={palette.wallInner}
-        style="stroke"
-        strokeWidth={snapStroke(Math.max(1, c * 0.07))}
-        strokeCap="square"
-        opacity={0.9}
-      />
+      {!plan && (
+        <>
+          <Path
+            path={wallPath}
+            color={palette.wall}
+            style="stroke"
+            strokeWidth={snapStroke(Math.max(2, c * 0.22))}
+            strokeCap="square"
+          />
+          <Path
+            path={wallPath}
+            color={palette.wallInner}
+            style="stroke"
+            strokeWidth={snapStroke(Math.max(1, c * 0.07))}
+            strokeCap="square"
+            opacity={0.9}
+          />
+        </>
+      )}
 
       {level.graph.nodes
         .filter(n => n.kind === 'EXIT')

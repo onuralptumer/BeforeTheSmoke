@@ -31,7 +31,9 @@ import {LEVELS} from '../src/game/levels';
 import {validateLevel} from '../src/game/levels/validate';
 import {RunResult, SignalPlacement} from '../src/game/types';
 
-const label = (p: SignalPlacement) => `${p.socketId}->${p.edgeId}`;
+/** A signal set's identity, order-independent so a set has one name. */
+const label = (set: SignalPlacement[]) =>
+  set.map(p => `${p.socketId}->${p.edgeId}`).sort().join(' + ');
 
 /** What the player is scored on. Locked for winning runs. */
 const scored = (result: RunResult) => ({
