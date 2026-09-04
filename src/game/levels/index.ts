@@ -9,6 +9,13 @@ import {level07} from './level07';
 import {level08} from './level08';
 import {level09} from './level09';
 import {level10} from './level10';
+// Found by search and graded by the difficulty oracle, then given an identity.
+// These are the first levels in the game with more than one way to win, so
+// they are also the first where a mark can be missed. See generate.ts.
+import {level11} from './level11';
+import {level12} from './level12';
+import {level13} from './level13';
+import {level14} from './level14';
 
 export const LEVELS: LevelDefinition[] = [
   level01,
@@ -21,6 +28,10 @@ export const LEVELS: LevelDefinition[] = [
   level08,
   level09,
   level10,
+  level11,
+  level12,
+  level13,
+  level14,
 ];
 
 export const levelById = (id: string): LevelDefinition => {
@@ -42,4 +53,8 @@ export {
   level08,
   level09,
   level10,
+  level11,
+  level12,
+  level13,
+  level14,
 };

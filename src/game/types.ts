@@ -81,6 +81,16 @@ export interface SignalSocketDefinition {
 export interface SignalPlacement {
   socketId: string;
   edgeId: string;
+  /**
+   * The tick from which the signal is lit. Defaults to 0 — set before anyone
+   * moves, which is how every level has worked so far.
+   *
+   * A later tick is a metering decision rather than a routing one: the junction
+   * behaves normally until this tick, so a group already committed to a route
+   * keeps it and only the people who arrive afterwards are turned. That is what
+   * lets one arrow split a crowd, which a signal lit from the start cannot do.
+   */
+  activateTick?: number;
 }
 
 export interface LevelDefinition {
@@ -115,6 +125,17 @@ export interface LevelDefinition {
   intendedSolutions: SignalPlacement[];
   /** Placements the level documents describe as traps. The harness requires these to fail. */
   temptingFailures: SignalPlacement[];
+  /**
+   * Other placements that legitimately win, but are not the best answer.
+   *
+   * `intendedSolutions` carries a stricter promise: those must also earn every
+   * mark, which is what makes `parFinishTick` reachable. A level with any real
+   * depth needs winning options that are *worse* than the best one — otherwise
+   * Swift is handed over with the win and measures nothing — and those go here.
+   * Listing them keeps the "undocumented solution" check meaningful: a winner
+   * in neither list is still a level the author did not understand.
+   */
+  alternateSolutions?: SignalPlacement[][];
   /**
    * Room names for the drawing furniture, in tiny caps on the plan.
    *

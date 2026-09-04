@@ -88,7 +88,10 @@ export class SimulationEngine {
   private closedDoors = new Set<CellKey>();
   private blockedEdges = new Set<string>();
   private occupancy = new Map<CellKey, string>();
-  private signalledEdgeByJunction = new Map<string, string>();
+  private signalledEdgeByJunction = new Map<
+    string,
+    {edgeId: string; activateTick: number}
+  >();
 
   tick = 0;
   finished = false;
@@ -130,7 +133,10 @@ export class SimulationEngine {
           `${level.id}: two signals on junction ${socket.junctionId}`,
         );
       }
-      this.signalledEdgeByJunction.set(socket.junctionId, signal.edgeId);
+      this.signalledEdgeByJunction.set(socket.junctionId, {
+        edgeId: signal.edgeId,
+        activateTick: signal.activateTick ?? 0,
+      });
     }
 
     this.agents = level.agents.map((definition, index) => ({
@@ -375,11 +381,14 @@ export class SimulationEngine {
       }
     }
 
-    const signalledEdgeId = this.signalledEdgeByJunction.get(junctionId);
-    if (signalledEdgeId !== undefined) {
-      const signalled = safeEdges.find(e => e.id === signalledEdgeId);
-      if (signalled) {
-        return {edge: signalled, reason: 'FOLLOWED_SIGNAL'};
+    // A signal only steers from the tick it is lit. Before that the junction
+    // behaves as if it were not there, so anyone who has already gone through
+    // keeps the route they chose.
+    const signalled = this.signalledEdgeByJunction.get(junctionId);
+    if (signalled !== undefined && this.tick >= signalled.activateTick) {
+      const edge = safeEdges.find(e => e.id === signalled.edgeId);
+      if (edge) {
+        return {edge, reason: 'FOLLOWED_SIGNAL'};
       }
     }
 

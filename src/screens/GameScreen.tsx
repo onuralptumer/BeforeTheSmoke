@@ -27,6 +27,7 @@ import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {LevelDefinition, SignalPlacement} from '../game/types';
+import {LEVELS} from '../game/levels';
 import {WorldMap} from '../game/engine/world';
 import {
   RecordedRun,
@@ -403,6 +404,7 @@ export function GameScreen({
               phase={pulsePhase}
               canvasWidth={mapSize.width}
               canvasHeight={mapSize.height}
+              sheetCount={LEVELS.length}
             />
           )}
 

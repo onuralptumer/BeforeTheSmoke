@@ -43,6 +43,8 @@ interface Props {
    */
   canvasWidth?: number;
   canvasHeight: number;
+  /** Total levels, for the title block's sheet count. */
+  sheetCount: number;
 }
 
 /**
@@ -71,6 +73,7 @@ function PlanFurnitureLayerImpl({
   level,
   viewport,
   canvasHeight,
+  sheetCount,
 }: Props) {
   const v = viewport;
 
@@ -221,7 +224,7 @@ function PlanFurnitureLayerImpl({
           <Text
             x={v.frameX + v.width - 150}
             y={blockTop + 19}
-            text={`SHEET ${sheet} OF 10 · REV A`}
+            text={`SHEET ${sheet} OF ${sheetCount} · REV A`}
             font={small}
             color={INK}
           />
@@ -240,5 +243,6 @@ export const PlanFurnitureLayer = React.memo(
     a.viewport.frameX === b.viewport.frameX &&
     a.viewport.frameY === b.viewport.frameY &&
     a.canvasWidth === b.canvasWidth &&
-    a.canvasHeight === b.canvasHeight,
+    a.canvasHeight === b.canvasHeight &&
+    a.sheetCount === b.sheetCount,
 );

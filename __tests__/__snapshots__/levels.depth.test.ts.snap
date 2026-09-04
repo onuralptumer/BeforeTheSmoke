@@ -1,0 +1,193 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`level depth records how many ways there are to win, and how good they are 1`] = `
+[
+  {
+    "finishTicks": [
+      10,
+    ],
+    "level": "level-01",
+    "options": 2,
+    "par": 10,
+    "spread": 0,
+    "warnings": [
+      "only one placement wins (sock-j1->e_j1_e2), so every mark comes free with the solution",
+    ],
+    "waysToWin": 1,
+  },
+  {
+    "finishTicks": [
+      16,
+    ],
+    "level": "level-02",
+    "options": 2,
+    "par": 16,
+    "spread": 0,
+    "warnings": [
+      "only one placement wins (sock-j1->e_j1_e2), so every mark comes free with the solution",
+    ],
+    "waysToWin": 1,
+  },
+  {
+    "finishTicks": [
+      14,
+    ],
+    "level": "level-03",
+    "options": 4,
+    "par": 14,
+    "spread": 0,
+    "warnings": [
+      "only one placement wins (sock-j1->e_j1_e2), so every mark comes free with the solution",
+    ],
+    "waysToWin": 1,
+  },
+  {
+    "finishTicks": [
+      18,
+    ],
+    "level": "level-04",
+    "options": 4,
+    "par": 18,
+    "spread": 0,
+    "warnings": [
+      "only one placement wins (sock-j1->e_j1_e2), so every mark comes free with the solution",
+    ],
+    "waysToWin": 1,
+  },
+  {
+    "finishTicks": [
+      23,
+    ],
+    "level": "level-05",
+    "options": 4,
+    "par": 23,
+    "spread": 0,
+    "warnings": [
+      "only one placement wins (sock-j1->e_j1_e2), so every mark comes free with the solution",
+    ],
+    "waysToWin": 1,
+  },
+  {
+    "finishTicks": [
+      20,
+    ],
+    "level": "level-06",
+    "options": 4,
+    "par": 20,
+    "spread": 0,
+    "warnings": [
+      "every winning placement earns Swift: parFinishTick 20 is not a target",
+      "every winning placement earns Flow: maxWaitTicksForFlow 10 is not a target",
+    ],
+    "waysToWin": 2,
+  },
+  {
+    "finishTicks": [
+      18,
+    ],
+    "level": "level-07",
+    "options": 4,
+    "par": 18,
+    "spread": 0,
+    "warnings": [
+      "only one placement wins (sock-jw->e_jw_je), so every mark comes free with the solution",
+    ],
+    "waysToWin": 1,
+  },
+  {
+    "finishTicks": [
+      26,
+    ],
+    "level": "level-08",
+    "options": 4,
+    "par": 26,
+    "spread": 0,
+    "warnings": [
+      "only one placement wins (sock-j1->e_j1_e2), so every mark comes free with the solution",
+    ],
+    "waysToWin": 1,
+  },
+  {
+    "finishTicks": [
+      22,
+    ],
+    "level": "level-09",
+    "options": 4,
+    "par": 22,
+    "spread": 0,
+    "warnings": [
+      "only one placement wins (sock-j1->e_j1_e2), so every mark comes free with the solution",
+    ],
+    "waysToWin": 1,
+  },
+  {
+    "finishTicks": [
+      26,
+    ],
+    "level": "level-10",
+    "options": 6,
+    "par": 26,
+    "spread": 0,
+    "warnings": [
+      "only one placement wins (sock-j1->e_j1_e2), so every mark comes free with the solution",
+    ],
+    "waysToWin": 1,
+  },
+  {
+    "finishTicks": [
+      28,
+      32,
+    ],
+    "level": "level-11",
+    "options": 6,
+    "par": 28,
+    "spread": 4,
+    "warnings": [
+      "every winning placement earns Flow: maxWaitTicksForFlow 0 is not a target",
+    ],
+    "waysToWin": 2,
+  },
+  {
+    "finishTicks": [
+      28,
+      32,
+    ],
+    "level": "level-12",
+    "options": 6,
+    "par": 28,
+    "spread": 4,
+    "warnings": [
+      "every winning placement earns Flow: maxWaitTicksForFlow 0 is not a target",
+    ],
+    "waysToWin": 2,
+  },
+  {
+    "finishTicks": [
+      36,
+      40,
+    ],
+    "level": "level-13",
+    "options": 6,
+    "par": 36,
+    "spread": 4,
+    "warnings": [
+      "every winning placement earns Flow: maxWaitTicksForFlow 0 is not a target",
+    ],
+    "waysToWin": 2,
+  },
+  {
+    "finishTicks": [
+      36,
+      40,
+    ],
+    "level": "level-14",
+    "options": 6,
+    "par": 36,
+    "spread": 4,
+    "warnings": [
+      "every winning placement earns Flow: maxWaitTicksForFlow 0 is not a target",
+    ],
+    "waysToWin": 2,
+  },
+]
+`;

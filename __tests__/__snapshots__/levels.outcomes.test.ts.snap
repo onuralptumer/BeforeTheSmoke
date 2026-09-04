@@ -677,3 +677,355 @@ exports[`level outcomes level-10 — Before the Smoke verdict is unchanged 1`] =
   },
 }
 `;
+
+exports[`level outcomes level-11 — Two Ways Out failure texture 1`] = `
+{
+  "baseline": {
+    "failedAgentIds": [
+      "a3",
+    ],
+    "failureReason": "NO_AVAILABLE_ROUTE",
+    "saved": "3/4",
+    "totalExposure": 0,
+  },
+  "losingRuns": {
+    "sock-j1->e_j1_jl": {
+      "failedAgentIds": [
+        "a3",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "3/4",
+      "totalExposure": 0,
+    },
+    "sock-jl->e_jl_ea": {
+      "failedAgentIds": [
+        "a3",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "3/4",
+      "totalExposure": 0,
+    },
+    "sock-jr->e_jr_ec": {
+      "failedAgentIds": [
+        "a3",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "3/4",
+      "totalExposure": 0,
+    },
+    "sock-jr->e_jr_ed": {
+      "failedAgentIds": [
+        "a3",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "3/4",
+      "totalExposure": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-11 — Two Ways Out verdict is unchanged 1`] = `
+{
+  "baselineSucceeds": false,
+  "problems": [],
+  "solutions": [
+    "sock-j1->e_j1_jr",
+    "sock-jl->e_jl_eb",
+  ],
+  "verdicts": {
+    "sock-j1->e_j1_jl": "FAILS",
+    "sock-j1->e_j1_jr": "SAFE",
+    "sock-jl->e_jl_ea": "FAILS",
+    "sock-jl->e_jl_eb": "SAFE",
+    "sock-jr->e_jr_ec": "FAILS",
+    "sock-jr->e_jr_ed": "FAILS",
+  },
+  "winningRuns": {
+    "sock-j1->e_j1_jr": {
+      "finishTick": 32,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": false,
+      },
+      "saved": "4/4",
+      "totalWaitTicks": 0,
+    },
+    "sock-jl->e_jl_eb": {
+      "finishTick": 28,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": true,
+      },
+      "saved": "4/4",
+      "totalWaitTicks": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-12 — Someone To Follow failure texture 1`] = `
+{
+  "baseline": {
+    "failedAgentIds": [
+      "a3",
+    ],
+    "failureReason": "NO_AVAILABLE_ROUTE",
+    "saved": "3/4",
+    "totalExposure": 0,
+  },
+  "losingRuns": {
+    "sock-j1->e_j1_jl": {
+      "failedAgentIds": [
+        "a3",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "3/4",
+      "totalExposure": 0,
+    },
+    "sock-jl->e_jl_ea": {
+      "failedAgentIds": [
+        "a3",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "3/4",
+      "totalExposure": 0,
+    },
+    "sock-jr->e_jr_ec": {
+      "failedAgentIds": [
+        "a3",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "3/4",
+      "totalExposure": 0,
+    },
+    "sock-jr->e_jr_ed": {
+      "failedAgentIds": [
+        "a3",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "3/4",
+      "totalExposure": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-12 — Someone To Follow verdict is unchanged 1`] = `
+{
+  "baselineSucceeds": false,
+  "problems": [],
+  "solutions": [
+    "sock-j1->e_j1_jr",
+    "sock-jl->e_jl_eb",
+  ],
+  "verdicts": {
+    "sock-j1->e_j1_jl": "FAILS",
+    "sock-j1->e_j1_jr": "SAFE",
+    "sock-jl->e_jl_ea": "FAILS",
+    "sock-jl->e_jl_eb": "SAFE",
+    "sock-jr->e_jr_ec": "FAILS",
+    "sock-jr->e_jr_ed": "FAILS",
+  },
+  "winningRuns": {
+    "sock-j1->e_j1_jr": {
+      "finishTick": 32,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": false,
+      },
+      "saved": "4/4",
+      "totalWaitTicks": 0,
+    },
+    "sock-jl->e_jl_eb": {
+      "finishTick": 28,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": true,
+      },
+      "saved": "4/4",
+      "totalWaitTicks": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-13 — The Long Tail failure texture 1`] = `
+{
+  "baseline": {
+    "failedAgentIds": [
+      "a6",
+    ],
+    "failureReason": "NO_AVAILABLE_ROUTE",
+    "saved": "6/8",
+    "totalExposure": 0,
+  },
+  "losingRuns": {
+    "sock-j1->e_j1_jl": {
+      "failedAgentIds": [
+        "a6",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "6/8",
+      "totalExposure": 0,
+    },
+    "sock-jl->e_jl_ea": {
+      "failedAgentIds": [
+        "a6",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "6/8",
+      "totalExposure": 0,
+    },
+    "sock-jr->e_jr_ec": {
+      "failedAgentIds": [
+        "a6",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "6/8",
+      "totalExposure": 0,
+    },
+    "sock-jr->e_jr_ed": {
+      "failedAgentIds": [
+        "a6",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "6/8",
+      "totalExposure": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-13 — The Long Tail verdict is unchanged 1`] = `
+{
+  "baselineSucceeds": false,
+  "problems": [],
+  "solutions": [
+    "sock-j1->e_j1_jr",
+    "sock-jl->e_jl_eb",
+  ],
+  "verdicts": {
+    "sock-j1->e_j1_jl": "FAILS",
+    "sock-j1->e_j1_jr": "SAFE",
+    "sock-jl->e_jl_ea": "FAILS",
+    "sock-jl->e_jl_eb": "SAFE",
+    "sock-jr->e_jr_ec": "FAILS",
+    "sock-jr->e_jr_ed": "FAILS",
+  },
+  "winningRuns": {
+    "sock-j1->e_j1_jr": {
+      "finishTick": 40,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": false,
+      },
+      "saved": "8/8",
+      "totalWaitTicks": 0,
+    },
+    "sock-jl->e_jl_eb": {
+      "finishTick": 36,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": true,
+      },
+      "saved": "8/8",
+      "totalWaitTicks": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-14 — Six Who Follow failure texture 1`] = `
+{
+  "baseline": {
+    "failedAgentIds": [
+      "a6",
+    ],
+    "failureReason": "NO_AVAILABLE_ROUTE",
+    "saved": "6/8",
+    "totalExposure": 0,
+  },
+  "losingRuns": {
+    "sock-j1->e_j1_jl": {
+      "failedAgentIds": [
+        "a6",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "6/8",
+      "totalExposure": 0,
+    },
+    "sock-jl->e_jl_ea": {
+      "failedAgentIds": [
+        "a6",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "6/8",
+      "totalExposure": 0,
+    },
+    "sock-jr->e_jr_ec": {
+      "failedAgentIds": [
+        "a6",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "6/8",
+      "totalExposure": 0,
+    },
+    "sock-jr->e_jr_ed": {
+      "failedAgentIds": [
+        "a6",
+      ],
+      "failureReason": "NO_AVAILABLE_ROUTE",
+      "saved": "6/8",
+      "totalExposure": 0,
+    },
+  },
+}
+`;
+
+exports[`level outcomes level-14 — Six Who Follow verdict is unchanged 1`] = `
+{
+  "baselineSucceeds": false,
+  "problems": [],
+  "solutions": [
+    "sock-j1->e_j1_jr",
+    "sock-jl->e_jl_eb",
+  ],
+  "verdicts": {
+    "sock-j1->e_j1_jl": "FAILS",
+    "sock-j1->e_j1_jr": "SAFE",
+    "sock-jl->e_jl_ea": "FAILS",
+    "sock-jl->e_jl_eb": "SAFE",
+    "sock-jr->e_jr_ec": "FAILS",
+    "sock-jr->e_jr_ed": "FAILS",
+  },
+  "winningRuns": {
+    "sock-j1->e_j1_jr": {
+      "finishTick": 40,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": false,
+      },
+      "saved": "8/8",
+      "totalWaitTicks": 0,
+    },
+    "sock-jl->e_jl_eb": {
+      "finishTick": 36,
+      "marks": {
+        "flow": true,
+        "rescue": true,
+        "swift": true,
+      },
+      "saved": "8/8",
+      "totalWaitTicks": 0,
+    },
+  },
+}
+`;

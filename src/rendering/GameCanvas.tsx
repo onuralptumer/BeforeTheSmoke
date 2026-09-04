@@ -42,6 +42,7 @@ interface Props {
   /** The full canvas, for placing the drawing furniture in the margins. */
   canvasWidth: number;
   canvasHeight: number;
+  sheetCount: number;
 }
 
 export function GameCanvas({
@@ -62,6 +63,7 @@ export function GameCanvas({
   phase,
   canvasWidth,
   canvasHeight,
+  sheetCount,
 }: Props) {
   // Smoke renders through two offscreen layers with blurs, which is the most
   // expensive thing on this canvas, and its drift is a slow 1.6 s loop. So it
@@ -172,6 +174,7 @@ export function GameCanvas({
         viewport={viewport}
         canvasWidth={canvasWidth}
         canvasHeight={canvasHeight}
+        sheetCount={sheetCount}
       />
       {/* Smoke sits *under* the analysis wash, with the building.
           Counter-intuitively this is what keeps it readable: the wash darkens

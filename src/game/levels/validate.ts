@@ -75,7 +75,14 @@ export interface LevelReport {
   baseline: RunResult;
   placements: Array<{placement: SignalPlacement[]; result: RunResult}>;
   solutions: SignalPlacement[][];
+  /** Structural defects. A level with any of these is broken. */
   problems: string[];
+  /**
+   * Design smells. A level with these still works, but is flatter than it
+   * should be — see `describeReport`. Kept separate from `problems` so the
+   * build stays honest about the difference between broken and shallow.
+   */
+  warnings: string[];
 }
 
 const one = (p: SignalPlacement) => `${p.socketId}->${p.edgeId}`;
@@ -94,6 +101,7 @@ export function validateLevel(level: LevelDefinition): LevelReport {
     .filter(p => p.result.success)
     .map(p => p.placement);
   const problems: string[] = [];
+  const warnings: string[] = [];
 
   if (baseline.success) {
     problems.push(
@@ -134,15 +142,53 @@ export function validateLevel(level: LevelDefinition): LevelReport {
     }
   }
 
+  // ...and the inverse, which is the more interesting half. If *every* way of
+  // winning also earns a mark, the mark measures nothing: it is handed over
+  // with the win. A mark is only worth having when some winning placement
+  // misses it, which in turn requires more than one way to win.
+  const winning = placements.filter(p => p.result.success);
+  if (winning.length === 1) {
+    warnings.push(
+      `only one placement wins (${label(winning[0].placement)}), so every mark comes free with the solution`,
+    );
+  } else if (winning.length > 1) {
+    if (winning.every(p => p.result.marks.swift)) {
+      warnings.push(
+        `every winning placement earns Swift: parFinishTick ${level.parFinishTick} is not a target`,
+      );
+    }
+    if (winning.every(p => p.result.marks.flow)) {
+      warnings.push(
+        `every winning placement earns Flow: maxWaitTicksForFlow ${level.maxWaitTicksForFlow} is not a target`,
+      );
+    }
+  }
+
+  // Par should be the best a player can actually do, not a restatement of the
+  // one solution's finish time.
+  const bestFinish = winning
+    .map(p => p.result.finishTick)
+    .filter((t): t is number => t !== null)
+    .sort((a, b) => a - b)[0];
+  if (bestFinish !== undefined && level.parFinishTick > bestFinish) {
+    warnings.push(
+      `parFinishTick ${level.parFinishTick} is looser than the best run (${bestFinish})`,
+    );
+  }
+
+  const documented = new Set([
+    ...level.intendedSolutions.map(label),
+    ...(level.alternateSolutions ?? []).map(label),
+  ]);
   for (const placement of solutions) {
-    if (!level.intendedSolutions.some(i => label(i) === label(placement))) {
+    if (!documented.has(label(placement))) {
       problems.push(
         `${label(placement)} solves the level but is not documented as a solution`,
       );
     }
   }
 
-  return {levelId: level.id, baseline, placements, solutions, problems};
+  return {levelId: level.id, baseline, placements, solutions, problems, warnings};
 }
 
 /** Human-readable dump, used by the levels test and the dev CLI. */
@@ -167,6 +213,9 @@ export function describeReport(report: LevelReport): string {
   }
   for (const problem of report.problems) {
     lines.push(`  !! ${problem}`);
+  }
+  for (const warning of report.warnings) {
+    lines.push(`  ~~ ${warning}`);
   }
   return lines.join('\n');
 }
